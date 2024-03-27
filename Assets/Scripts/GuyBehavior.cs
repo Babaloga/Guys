@@ -159,7 +159,7 @@ public class GuyBehavior : NetworkBehaviour
             forceDirection = (forceDirection.x * xVector) + (forceDirection.z * zVector);
         }
 
-        grounded = Physics.Raycast(transform.position, Vector3.down, 1.01f);
+        grounded = Physics.Raycast(transform.position - (transform.up/2f), Vector3.down, 0.51f);
 
         if (grounded)
         {
@@ -182,7 +182,15 @@ public class GuyBehavior : NetworkBehaviour
 
     private void Update()
     {
-        if (IsServer) UpdateLeaderboard();
+        if (IsServer)
+        {
+            if(lastHit != null && grounded && rb.velocity.sqrMagnitude <= 25)
+            {
+                lastHit = null;
+            }
+
+            UpdateLeaderboard();
+        }
 
         if (!IsOwner) return;
 
@@ -201,6 +209,11 @@ public class GuyBehavior : NetworkBehaviour
         Leaderboard.UpdateLeaderboard(m_guyName.Value.ToString(), Time.time - startTime);
     }
 
+    private void RegisterDeath()
+    {
+        if(lastHit != null) Leaderboard.LogDeath(lastHit.m_guyName.Value.ToString());
+    }
+
     private bool setToDestroy = false;
 
     [Rpc(SendTo.Server)]
@@ -212,6 +225,7 @@ public class GuyBehavior : NetworkBehaviour
             ulong clientID = OwnerClientId;
 
             DeathExplosionRpc();
+            RegisterDeath();
 
             Destroy(gameObject);
 
@@ -233,7 +247,7 @@ public class GuyBehavior : NetworkBehaviour
         if (jumping && grounded)
             rb.AddForce(Vector3.up * jumpSpeed, ForceMode.VelocityChange);
 
-        if (grounded && Vector3.Angle(transform.up, Vector3.up) < 95f)
+        if (grounded && Vector3.Angle(transform.up, Vector3.up) < 90f)
         {
             rb.constraints = RigidbodyConstraints.FreezeRotation;
             transform.rotation = Quaternion.Euler(Vector3.zero);
@@ -254,12 +268,15 @@ public class GuyBehavior : NetworkBehaviour
     //    }
     //}
 
+    public GuyBehavior lastHit;
+
     private void OnCollisionEnter(Collision collision)
     {
         if (collision.gameObject.GetComponent<GuyBehavior>())
         {
             float collisionSpeed = collision.relativeVelocity.sqrMagnitude;
             Vector3 relativePosition = (transform.position - collision.transform.position).normalized;
+            lastHit = collision.gameObject.GetComponent<GuyBehavior>();
             CollisionRpc(collisionSpeed, relativePosition);
             //rb.AddForce(relativePosition * collisionSpeed * 3);
         }
