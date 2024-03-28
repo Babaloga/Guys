@@ -16,6 +16,9 @@ public class GuyBehavior : NetworkBehaviour
     public bool cameraRelativeMovement = false;
 
     public NetworkVariable<FixedString64Bytes> m_guyName = new NetworkVariable<FixedString64Bytes>();
+
+    public NetworkVariable<FixedString64Bytes> m_lastHit = new NetworkVariable<FixedString64Bytes>();
+
     TMPro.TMP_Text guyNametag;
     Rigidbody rb;
     new AudioSource audio;
@@ -68,6 +71,8 @@ public class GuyBehavior : NetworkBehaviour
             string nounsListIn = Resources.Load<TextAsset>("nouns").text;
 
             nouns = nounsListIn.Split('\n');
+
+            m_lastHit.Value = "";
 
             int rand = UnityEngine.Random.Range(0, 1000);
             if (rand < 1)
@@ -182,20 +187,27 @@ public class GuyBehavior : NetworkBehaviour
     }
 
     private float lastLeaderboardUpdateTime = 0;
+    private float lastTimeAirborne = 0;
 
     private void Update()
     {
         if (IsServer)
         {
-            if(lastHit != null && grounded && rb.velocity.sqrMagnitude <= 25)
-            {
-                lastHit = null;
-            }
 
             UpdateLeaderboard();
         }
 
         if (!IsOwner) return;
+
+        if (!grounded)
+        {
+            lastTimeAirborne = Time.time;
+        }
+
+        if (m_lastHit.Value != "" && (Time.time - lastTimeAirborne > 1.2f))
+        {
+            UnsetLastHitRpc();
+        }
 
         ApplyMovementRPC(Input.GetButtonDown("Jump"));
 
@@ -204,17 +216,22 @@ public class GuyBehavior : NetworkBehaviour
             lastLeaderboardUpdateTime = Time.time;
         }
 
-        if (transform.position.y < -1 || Input.GetButtonUp("KillMe")) KillMeRpc();
+        if (transform.position.y < -1 || Input.GetButtonUp("KillMe"))
+        {
+            KillMeRpc();
+        }
+    }
+
+    [Rpc(SendTo.Server)]
+    private void UnsetLastHitRpc()
+    {
+        print("UNSETTING LAST HIT");
+        m_lastHit.Value = "";
     }
 
     private void UpdateLeaderboard()
     {
         Leaderboard.UpdateLeaderboard(m_guyName.Value.ToString(), Time.time - startTime);
-    }
-
-    private void RegisterDeath()
-    {
-        if(lastHit != null) Leaderboard.LogDeath(lastHit.m_guyName.Value.ToString());
     }
 
     private bool setToDestroy = false;
@@ -227,9 +244,11 @@ public class GuyBehavior : NetworkBehaviour
             setToDestroy = true;
             ulong clientID = OwnerClientId;
 
-            DeathExplosionRpc();
-            RegisterDeath();
+            print("Register Death, Server: " + IsServer + ". lastHit: " + m_lastHit.Value.ToString());
 
+            if (m_lastHit.Value != "") Leaderboard.LogDeath(m_lastHit.Value.ToString());
+
+            DeathExplosionRpc();
             Destroy(gameObject);
 
             NetworkObject newPlayer = Instantiate(NetworkManager.NetworkConfig.PlayerPrefab).GetComponent<NetworkObject>();
@@ -271,35 +290,41 @@ public class GuyBehavior : NetworkBehaviour
     //    }
     //}
 
-    public GuyBehavior lastHit;
-
     private void OnCollisionEnter(Collision collision)
     {
         if (collision.gameObject.GetComponent<GuyBehavior>())
         {
             float collisionSpeed = collision.relativeVelocity.sqrMagnitude;
             Vector3 relativePosition = (transform.position - collision.transform.position).normalized;
-            lastHit = collision.gameObject.GetComponent<GuyBehavior>();
+            RegisterLastHitRpc(collision.gameObject.GetComponent<GuyBehavior>().m_guyName.Value);
             CollisionRpc(collisionSpeed, relativePosition);
             //rb.AddForce(relativePosition * collisionSpeed * 3);
         }
     }
 
+    [Rpc(SendTo.Server)]
+    private void RegisterLastHitRpc(FixedString64Bytes name)
+    {
+        m_lastHit.Value = name;
+        print("Is Server: " + IsServer + ". Last Hit was just set to " + m_lastHit.Value + ".");
+    }
+
     [Rpc(SendTo.ClientsAndHost)]
     private void CollisionRpc(float collisionSpeed, Vector3 relativePosition)
     {
-#if UNITY_EDITOR
-        print(collisionSpeed);
-#endif
-        if(collisionSpeed < 150)
+        if (relativePosition.z > 0 || (relativePosition.z == 0 && relativePosition.y > 0))
         {
-            audio.PlayOneShot(lowClips.RandomEntry());
-        }
-        else
-        {
-            audio.PlayOneShot(highClips.RandomEntry());
-        }
+            audio.volume = Mathf.Clamp(collisionSpeed / 300f, 0, 2);
 
+            if (collisionSpeed < 1500)
+            {
+                audio.PlayOneShot(lowClips.RandomEntry());
+            }
+            else
+            {
+                audio.PlayOneShot(highClips.RandomEntry());
+            }
+        }
         rb.AddForce(relativePosition * collisionSpeed * 3);
     }
 }

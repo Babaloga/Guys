@@ -26,8 +26,12 @@ public class Leaderboard : NetworkBehaviour
         if(leaderboardDict != null) leaderboardDict[guyName] = guyTime;
     }
 
+
+
     public static void LogDeath(string killerName)
     {
+        print("LogDeath, Server: " + NetworkManager.Singleton.IsServer);
+
         int count = 0;
 
         killCounts.TryGetValue(killerName, out count);

@@ -26,8 +26,10 @@ public class HelloWorldManager : MonoBehaviour
 
     void OnGUI()
     {
+        
         if (host)
         {
+            GUILayout.Label("Host");
             GUILayout.BeginArea(new Rect(10, 10, 300, 300));
             if (!NetworkManager.Singleton.IsClient && !NetworkManager.Singleton.IsServer)
             {
@@ -39,6 +41,10 @@ public class HelloWorldManager : MonoBehaviour
             }
 
             GUILayout.EndArea();
+        }
+        else if (server)
+        {
+            GUILayout.Label("Server");
         }
     }
 

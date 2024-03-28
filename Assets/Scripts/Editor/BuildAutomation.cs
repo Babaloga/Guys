@@ -63,6 +63,11 @@ class BuildAutomation : EditorWindow
         }
 
         GUILayout.EndHorizontal();
+
+        if(GUILayout.Button("Windows Server"))
+        {
+            BuildWindowsServer();
+        }
     }
 
     private void BuildWindowsAndLinux()
@@ -81,6 +86,7 @@ class BuildAutomation : EditorWindow
         HelloWorldManager netUI = GameObject.Find("Network UI").GetComponent<HelloWorldManager>();
         netUI.server = true;
         netUI.host = false;
+        EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
         EditorSceneManager.SaveOpenScenes();
 
         string name = string.Format("WindowsServer{0}.{1}", majorVersionNumber, minorVersionNumber);
@@ -116,6 +122,7 @@ class BuildAutomation : EditorWindow
         HelloWorldManager netUI = GameObject.Find("Network UI").GetComponent<HelloWorldManager>();
         netUI.server = false;
         netUI.host = false;
+        EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
         EditorSceneManager.SaveOpenScenes();
 
         string name = string.Format("WindowsClient{0}.{1}", majorVersionNumber, minorVersionNumber);
@@ -151,6 +158,7 @@ class BuildAutomation : EditorWindow
         HelloWorldManager netUI = GameObject.Find("Network UI").GetComponent<HelloWorldManager>();
         netUI.server = false;
         netUI.host = false;
+        EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
         EditorSceneManager.SaveOpenScenes();
 
         string name = string.Format("LinuxClient{0}.{1}", majorVersionNumber, minorVersionNumber);
@@ -186,6 +194,7 @@ class BuildAutomation : EditorWindow
         HelloWorldManager netUI = GameObject.Find("Network UI").GetComponent<HelloWorldManager>();
         netUI.server = false;
         netUI.host = false;
+        EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
         EditorSceneManager.SaveOpenScenes();
 
         string name = string.Format("MacClient{0}.{1}", majorVersionNumber, minorVersionNumber);
