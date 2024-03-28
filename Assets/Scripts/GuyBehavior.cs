@@ -18,6 +18,7 @@ public class GuyBehavior : NetworkBehaviour
     public NetworkVariable<FixedString64Bytes> m_guyName = new NetworkVariable<FixedString64Bytes>();
     TMPro.TMP_Text guyNametag;
     Rigidbody rb;
+    new AudioSource audio;
 
     string[] namesList1;
     string[] namesList2;
@@ -31,6 +32,9 @@ public class GuyBehavior : NetworkBehaviour
     public GameObject deathPrefab;
 
     public static List<GuyBehavior> activeGuys;
+
+    public AudioClip[] lowClips;
+    public AudioClip[] highClips;
 
     public override void OnNetworkSpawn()
     {
@@ -49,11 +53,10 @@ public class GuyBehavior : NetworkBehaviour
     {
         guyNametag = GetComponentInChildren<TMPro.TMP_Text>();
         rb = GetComponent<Rigidbody>();
+        audio = GetComponent<AudioSource>();
 
         if (IsServer)
         {
-
-
             string namesList1In = Resources.Load<TextAsset>("Name1").text;
 
             namesList1 = namesList1In.Split('\n');
@@ -201,7 +204,7 @@ public class GuyBehavior : NetworkBehaviour
             lastLeaderboardUpdateTime = Time.time;
         }
 
-        if (transform.position.y < -1) KillMeRpc();
+        if (transform.position.y < -1 || Input.GetButtonUp("KillMe")) KillMeRpc();
     }
 
     private void UpdateLeaderboard()
@@ -285,6 +288,18 @@ public class GuyBehavior : NetworkBehaviour
     [Rpc(SendTo.ClientsAndHost)]
     private void CollisionRpc(float collisionSpeed, Vector3 relativePosition)
     {
+#if UNITY_EDITOR
+        print(collisionSpeed);
+#endif
+        if(collisionSpeed < 150)
+        {
+            audio.PlayOneShot(lowClips.RandomEntry());
+        }
+        else
+        {
+            audio.PlayOneShot(highClips.RandomEntry());
+        }
+
         rb.AddForce(relativePosition * collisionSpeed * 3);
     }
 }
