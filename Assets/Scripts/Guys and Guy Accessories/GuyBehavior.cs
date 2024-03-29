@@ -39,6 +39,10 @@ public class GuyBehavior : NetworkBehaviour
     public AudioClip[] lowClips;
     public AudioClip[] highClips;
 
+    private int consecutiveBounces = 0;
+    private int consecutiveFlips = 0;
+    private bool flipEligible = false;
+
     public override void OnNetworkSpawn()
     {
         if (activeGuys == null) activeGuys = new List<GuyBehavior>();
@@ -118,7 +122,7 @@ public class GuyBehavior : NetworkBehaviour
     {
         
         guyNametag.SetText(m_guyName.Value.ToString());
-
+        GetComponent<Rigidbody>().velocity = UnityEngine.Random.onUnitSphere * 5;
     }
 
     private void OnEnable()
@@ -167,18 +171,18 @@ public class GuyBehavior : NetworkBehaviour
             forceDirection = (forceDirection.x * xVector) + (forceDirection.z * zVector);
         }
 
-        grounded = Physics.Raycast(transform.position - (transform.up/2f), Vector3.down, 0.51f);
+        grounded = Physics.Raycast(transform.position, Vector3.down, 0.51f);
 
         if (grounded)
         {
-            if (forceDirection == Vector3.zero)
-            {
-                rb.AddForce(0.5f * speed * Time.fixedDeltaTime * -rb.velocity);
-            }
-            else
-            {
+            //if (forceDirection == Vector3.zero)
+            //{
+            //    rb.AddForce(0.5f * speed * Time.fixedDeltaTime * -rb.velocity);
+            //}
+            //else
+            //{
                 rb.AddForce(forceDirection * forceMagnitude);
-            }
+            //}
         }
         else
         {
@@ -193,7 +197,6 @@ public class GuyBehavior : NetworkBehaviour
     {
         if (IsServer)
         {
-
             UpdateLeaderboard();
         }
 
@@ -202,6 +205,10 @@ public class GuyBehavior : NetworkBehaviour
         if (!grounded)
         {
             lastTimeAirborne = Time.time;
+        }
+        else
+        {
+
         }
 
         if (m_lastHit.Value != "" && (Time.time - lastTimeAirborne > 1.2f))
@@ -231,7 +238,48 @@ public class GuyBehavior : NetworkBehaviour
 
     private void UpdateLeaderboard()
     {
-        Leaderboard.UpdateLeaderboard(m_guyName.Value.ToString(), Time.time - startTime);
+        switch (Leaderboard.currentGoal.Value)
+        {
+            case Leaderboard.Goal.Lifetime:
+                Leaderboard.LogLifetime(m_guyName.Value.ToString(), Time.time - startTime);
+                break;
+
+            case Leaderboard.Goal.Altitude:
+                Leaderboard.LogAltitude(m_guyName.Value.ToString(), transform.position.y);
+                break;
+
+            case Leaderboard.Goal.Bounces:
+                if(grounded) consecutiveBounces = 0;
+                break;
+
+            case Leaderboard.Goal.Flips:
+                if (grounded)
+                {
+                    consecutiveFlips = 0;
+                    flipEligible = true;
+                }
+                else
+                {
+                    if (flipEligible)
+                    {
+                        if(Vector3.Angle(transform.up, Vector3.down) < 45)
+                        {
+                            flipEligible = false;
+                            consecutiveFlips++;
+                            Leaderboard.LogFlips(m_guyName.Value.ToString(), consecutiveFlips);
+                        }
+                    }
+                    else
+                    {
+                        if (Vector3.Angle(transform.up, Vector3.up) < 45)
+                        {
+                            flipEligible = true;
+                        }
+                    }
+                }
+
+                break;
+        }
     }
 
     private bool setToDestroy = false;
@@ -251,7 +299,7 @@ public class GuyBehavior : NetworkBehaviour
             DeathExplosionRpc();
             Destroy(gameObject);
 
-            NetworkObject newPlayer = Instantiate(NetworkManager.NetworkConfig.PlayerPrefab).GetComponent<NetworkObject>();
+            NetworkObject newPlayer = Instantiate(NetworkManager.NetworkConfig.PlayerPrefab/*, new Vector3(UnityEngine.Random.Range(-3, 3), 5, UnityEngine.Random.Range(-3, 3)), Quaternion.identity*/).GetComponent<NetworkObject>();
 
             newPlayer.SpawnAsPlayerObject(clientID);
         }
@@ -272,7 +320,7 @@ public class GuyBehavior : NetworkBehaviour
         if (grounded && Vector3.Angle(transform.up, Vector3.up) < 90f)
         {
             rb.constraints = RigidbodyConstraints.FreezeRotation;
-            transform.rotation = Quaternion.Euler(Vector3.zero);
+            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.Euler(Vector3.zero), 40 * Time.deltaTime);
         }
         else
         {
@@ -294,12 +342,20 @@ public class GuyBehavior : NetworkBehaviour
     {
         if (collision.gameObject.GetComponent<GuyBehavior>())
         {
+            consecutiveBounces++;
+            RegisterBouncesRpc();
             float collisionSpeed = collision.relativeVelocity.sqrMagnitude;
             Vector3 relativePosition = (transform.position - collision.transform.position).normalized;
             RegisterLastHitRpc(collision.gameObject.GetComponent<GuyBehavior>().m_guyName.Value);
-            CollisionRpc(collisionSpeed, relativePosition);
+            CollisionRpc(collisionSpeed, relativePosition, collision.contacts[0].point);
             //rb.AddForce(relativePosition * collisionSpeed * 3);
         }
+    }
+
+    [Rpc(SendTo.Server)]
+    private void RegisterBouncesRpc()
+    {
+        Leaderboard.LogBounces(m_guyName.Value.ToString(), consecutiveBounces);
     }
 
     [Rpc(SendTo.Server)]
@@ -310,7 +366,7 @@ public class GuyBehavior : NetworkBehaviour
     }
 
     [Rpc(SendTo.ClientsAndHost)]
-    private void CollisionRpc(float collisionSpeed, Vector3 relativePosition)
+    private void CollisionRpc(float collisionSpeed, Vector3 relativePosition, Vector3 contactPoint)
     {
         if (relativePosition.z > 0 || (relativePosition.z == 0 && relativePosition.y > 0))
         {
@@ -325,7 +381,7 @@ public class GuyBehavior : NetworkBehaviour
                 audio.PlayOneShot(highClips.RandomEntry());
             }
         }
-        rb.AddForce(relativePosition * collisionSpeed * 3);
+        rb.AddForceAtPosition(relativePosition * collisionSpeed * 3, contactPoint);
     }
 }
 

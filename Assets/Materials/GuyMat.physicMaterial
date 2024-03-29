@@ -7,7 +7,7 @@ PhysicMaterial:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: GuyMat
-  dynamicFriction: 0.8
+  dynamicFriction: 2
   staticFriction: 0
   bounciness: 1
   frictionCombine: 0
