@@ -44,7 +44,7 @@ public class HelloWorldManager : MonoBehaviour
         }
         else if (server)
         {
-            GUILayout.Label("Server");
+            GUILayout.Label("S");
         }
     }
 

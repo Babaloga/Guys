@@ -33,6 +33,7 @@ class BuildAutomation : EditorWindow
         if(GUILayout.Button("Build Major Version"))
         {
             majorVersionNumber++;
+            minorVersionNumber = 0;
             File.WriteAllText("Assets/VersionNumber.txt", majorVersionNumber + "\n" + minorVersionNumber);
             BuildWindowsAndLinux();
         }

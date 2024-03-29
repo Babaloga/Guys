@@ -148,6 +148,8 @@ public class GuyBehavior : NetworkBehaviour
     // Update is called once per frame
     void FixedUpdate()
     {
+        grounded = Physics.Raycast(transform.position, Vector3.down, 0.51f);
+
         if (!IsOwner) return;
 
         Vector3 forceDirection = new Vector3(Input.GetAxis("Horizontal"), rb.velocity.y, Input.GetAxis("Vertical")).normalized;
@@ -170,8 +172,6 @@ public class GuyBehavior : NetworkBehaviour
 
             forceDirection = (forceDirection.x * xVector) + (forceDirection.z * zVector);
         }
-
-        grounded = Physics.Raycast(transform.position, Vector3.down, 0.51f);
 
         if (grounded)
         {
@@ -253,6 +253,9 @@ public class GuyBehavior : NetworkBehaviour
                 break;
 
             case Leaderboard.Goal.Flips:
+
+                print(string.Format("{0} | Grounded: {1}, FlipEligible: {2}", m_guyName.Value.ToString(), grounded, flipEligible));
+
                 if (grounded)
                 {
                     consecutiveFlips = 0;
@@ -342,10 +345,12 @@ public class GuyBehavior : NetworkBehaviour
     {
         if (collision.gameObject.GetComponent<GuyBehavior>())
         {
-            consecutiveBounces++;
-            RegisterBouncesRpc();
+            
             float collisionSpeed = collision.relativeVelocity.sqrMagnitude;
             Vector3 relativePosition = (transform.position - collision.transform.position).normalized;
+
+            //if(relativePosition.y > Vector3.ProjectOnPlane(relativePosition, Vector3.up).magnitude) RegisterBouncesRpc();
+            if (Vector3.Angle(relativePosition, Vector3.up) < 45) RegisterBouncesRpc();
             RegisterLastHitRpc(collision.gameObject.GetComponent<GuyBehavior>().m_guyName.Value);
             CollisionRpc(collisionSpeed, relativePosition, collision.contacts[0].point);
             //rb.AddForce(relativePosition * collisionSpeed * 3);
@@ -355,6 +360,7 @@ public class GuyBehavior : NetworkBehaviour
     [Rpc(SendTo.Server)]
     private void RegisterBouncesRpc()
     {
+        consecutiveBounces++;
         Leaderboard.LogBounces(m_guyName.Value.ToString(), consecutiveBounces);
     }
 
@@ -381,7 +387,7 @@ public class GuyBehavior : NetworkBehaviour
                 audio.PlayOneShot(highClips.RandomEntry());
             }
         }
-        rb.AddForceAtPosition(relativePosition * collisionSpeed * 3, contactPoint);
+        rb.AddForceAtPosition(relativePosition * collisionSpeed * 2, contactPoint);
     }
 }
 

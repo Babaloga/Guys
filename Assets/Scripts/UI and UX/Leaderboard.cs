@@ -88,6 +88,8 @@ public class Leaderboard : NetworkBehaviour
     }
     public static void LogFlips(string guyName, int count)
     {
+        print(guyName + " called LogFlips with " + count);
+
         if (currentGoal.Value != Goal.Flips) return;
 
         int existingRecord = 0;
@@ -97,6 +99,7 @@ public class Leaderboard : NetworkBehaviour
 
     public static void LogBounces(string guyName, int count)
     {
+        print(guyName + " called LogBounces with " + count);
         if (currentGoal.Value != Goal.Bounces) return;
 
         int existingRecord = 0;
@@ -224,7 +227,7 @@ public class Leaderboard : NetworkBehaviour
         RenderLeaderboardRPC(displayText);
     }
 
-    [Rpc(SendTo.ClientsAndHost)]
+    [Rpc(SendTo.Everyone)]
     private void RenderLeaderboardRPC(string displayText)
     {
         uiText.text = displayText;

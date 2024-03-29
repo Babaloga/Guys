@@ -25,9 +25,9 @@ public class ConsoleToGUI : MonoBehaviour
         output = logString;
         stack = stackTrace;
         myLog = output + "\n" + myLog;
-        if (myLog.Length > 5000)
+        if (myLog.Length > 1001)
         {
-            myLog = myLog.Substring(0, 4000);
+            myLog = myLog.Substring(0, 1000);
         }
     }
 
@@ -35,7 +35,7 @@ public class ConsoleToGUI : MonoBehaviour
     {
         if (NetworkManager.Singleton.IsServer)
         {
-            myLog = GUI.TextArea(new Rect(10, 10, Screen.width - 10, Screen.height - 10), myLog);
+            myLog = GUI.TextArea(new Rect(10, 10, Screen.width / 3f, Screen.height - 10), myLog);
         }
     }
     //#endif
