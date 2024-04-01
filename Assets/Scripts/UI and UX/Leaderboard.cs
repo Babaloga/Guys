@@ -15,6 +15,10 @@ public class Leaderboard : NetworkBehaviour
 
     public static Dictionary<string, float> leaderDict;
 
+    public static Leaderboard singleton;
+
+    public GameObject[] Orbs;
+
     private TMPro.TMP_Text uiText;
 
     public Goal startingGoal;
@@ -27,6 +31,10 @@ public class Leaderboard : NetworkBehaviour
     private static List<Goal> unvisited;
 
     public GameObject runnerCrown;
+    public GameObject ufoPrefab;
+
+    private string lastWinner;
+    private int consecutiveWins;
 
     public enum Goal {
         Lifetime,
@@ -46,12 +54,16 @@ public class Leaderboard : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        singleton = this;
+
         if (IsServer)
         {
             ResetUnvisited();
             InitiateGoal(startingGoal);
             unvisited.Remove(startingGoal);
         }
+
+
 
         base.OnNetworkSpawn();
     }
@@ -199,9 +211,42 @@ public class Leaderboard : NetworkBehaviour
             //Goal Period End
             if (goalDuration > 0 && NetworkManager.Singleton.ServerTime.TimeAsFloat - goalStart >= goalDuration)
             {
+                bool someoneHasCrown = false;
+
                 foreach (GuyBehavior g in GuyBehavior.activeGuys)
                 {
-                    if (g.m_crownActive.Value) g.m_legacyCrown.Value = true;
+                    if (g.m_crownActive.Value)
+                    {
+                        someoneHasCrown = true;
+
+                        g.m_legacyCrown.Value = true;
+                        g.m_crownActive.Value = false;
+
+                        string guyName = g.m_guyName.Value.ToString();
+
+                        if (guyName == lastWinner)
+                        {
+                            consecutiveWins++;
+
+                            if (consecutiveWins >= 3)
+                            {
+                                NetworkObject ufo = Instantiate(ufoPrefab, new Vector3(0, 0, -50), Quaternion.identity).GetComponent<NetworkObject>();
+                                ufo.Spawn();
+                                ufo.GetComponent<UFOBehavior>().AcquireTarget(g.transform);
+                            }
+                        }
+                        else
+                        {
+                            lastWinner = guyName;
+                            consecutiveWins = 1;
+                        }
+                    }
+                }
+
+                if (!someoneHasCrown)
+                {
+                    lastWinner = "";
+                    consecutiveWins = 0;
                 }
 
                 if (unvisited.Count == 0) 

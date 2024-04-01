@@ -147,10 +147,20 @@ public class GuyBehavior : NetworkBehaviour
         activeGuys.Add(this);
     }
 
+    public override void OnNetworkDespawn()
+    {
+        print("OnDestroy Called");
+        Leaderboard.LogDestroyed(m_guyName.Value.ToString());
+
+        activeGuys.Remove(this);
+
+        base.OnNetworkDespawn();
+    }
+
     public override void OnDestroy()
     {
-        Leaderboard.LogDestroyed(m_guyName.Value.ToString());
         activeGuys.Remove(this);
+
         base.OnDestroy();
     }
 
@@ -322,7 +332,7 @@ public class GuyBehavior : NetworkBehaviour
             if (m_lastHit.Value != "") Leaderboard.LogDeath(m_lastHit.Value.ToString());
 
             DeathExplosionRpc();
-            Destroy(gameObject);
+            GetComponent<NetworkObject>().Despawn();
 
             NetworkObject newPlayer = Instantiate(NetworkManager.NetworkConfig.PlayerPrefab/*, new Vector3(UnityEngine.Random.Range(-3, 3), 5, UnityEngine.Random.Range(-3, 3)), Quaternion.identity*/).GetComponent<NetworkObject>();
 
@@ -386,14 +396,19 @@ public class GuyBehavior : NetworkBehaviour
     {
         if (other.GetComponent<Beans>())
         {
-            Leaderboard.LogBeanPickup(m_guyName.Value.ToString());
-            other.enabled = false;
-            Destroy(other.gameObject);
+            if (IsServer)
+            {
+                Leaderboard.LogBeanPickup(m_guyName.Value.ToString());
+                other.GetComponent<NetworkObject>().Despawn();
+            }
         }
         else if (other.tag == "RunnerCrown")
         {
-            Leaderboard.LogCrownPickup(m_guyName.Value.ToString());
-            Destroy(other.gameObject);
+            if (IsServer)
+            {
+                Leaderboard.LogCrownPickup(m_guyName.Value.ToString());
+                other.GetComponent<NetworkObject>().Despawn();
+            }
         }
     }
 

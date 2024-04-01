@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System;
 using UnityEngine;
 using Unity.Netcode;
 
@@ -21,6 +22,6 @@ public class BackgroundDrift : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        transform.localRotation = Quaternion.Euler(sPos.x + 0, sPos.y + (NetworkManager.Singleton.ServerTime.TimeAsFloat/ 50f) * scale, sPos.z + 0);
+        transform.localRotation = Quaternion.Euler(sPos.x + 0, sPos.y + (DateTime.UtcNow.Ticks/ (50f * 10000000)) * scale, sPos.z + 0);
     }
 }

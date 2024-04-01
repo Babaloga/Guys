@@ -37,6 +37,7 @@ public class OffscreenPointer : MonoBehaviour
 
         foreach(GuyBehavior gb in GuyBehavior.activeGuys)
         {
+
             Vector2 screenPosObj = camera.WorldToScreenPoint(new Vector3(gb.transform.position.x, 0, gb.transform.position.z));
 
             if (gb.transform.position.y > 20)
