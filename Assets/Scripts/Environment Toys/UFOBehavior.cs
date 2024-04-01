@@ -34,7 +34,7 @@ public class UFOBehavior : NetworkBehaviour
     {
         camera = Camera.main;
 
-        StartCoroutine(TestingSendUFO());
+        //StartCoroutine(TestingSendUFO());
     }
 
     IEnumerator TestingSendUFO()
