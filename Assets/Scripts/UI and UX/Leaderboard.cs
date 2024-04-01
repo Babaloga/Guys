@@ -322,7 +322,7 @@ public class Leaderboard : NetworkBehaviour
         for (int i = 0; i < Mathf.Clamp(5, 0, sortedDictionary.Count()); i++)
         {
             var element = sortedDictionary.ElementAt(i);
-            displayText += string.Format("<align=\"left\">{0}: {1}<line-height=0>\n<align=\"right\">{2} {3}<line-height=1em>\n", i + 1, element.Key, element.Value, unit);
+            displayText += string.Format("<align=\"left\">{0}: {1}<line-height=0>\n<align=\"right\">{2} {3}<line-height=1em>\n", i + 1, element.Key, element.Value.ToString("#####0.##"), unit);
         }
 
         if (sortedDictionary.Count() > 0)
