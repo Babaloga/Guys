@@ -207,7 +207,7 @@ public class UFOBehavior : NetworkBehaviour
     private void ClientInteractionAbductionProcessRpc(RpcParams rpcParams = default)
     {
         Transform targetPass = NetworkManager.LocalClient.PlayerObject.transform;
-        targetPass.gameObject.GetComponent<Rigidbody>().AddForce((transform.position - target.position), ForceMode.Acceleration);
+        targetPass.gameObject.GetComponent<Rigidbody>().AddForce((transform.position - targetPass.position), ForceMode.Acceleration);
         targetPass.gameObject.GetComponent<Rigidbody>().useGravity = false;
     }
 
