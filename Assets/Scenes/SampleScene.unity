@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 705507994}
-  m_IndirectSpecularColor: {r: 0, g: 0, b: 0, a: 1}
+  m_IndirectSpecularColor: {r: 0.4366757, g: 0.48427194, b: 0.5645252, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -1384,7 +1384,7 @@ MonoBehaviour:
   - {fileID: 231772162}
   - {fileID: 1857725387}
   startingGoal: 6
-  goalDuration: 30
+  goalDuration: 300
   runnerCrown: {fileID: 0}
   ufoPrefab: {fileID: 237275668714818981, guid: 811eac682cfaba149bd19b4e9fb1e12e, type: 3}
 --- !u!1 &483155047
@@ -9471,7 +9471,7 @@ MonoBehaviour:
   m_DisconnectTimeoutMS: 30000
   ConnectionData:
     Address: 173.73.95.133
-    Port: 7878
+    Port: 7979
     ServerListenAddress: 0.0.0.0
   DebugSimulator:
     PacketDelayMS: 0
