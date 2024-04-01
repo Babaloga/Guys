@@ -39,7 +39,7 @@ public class UFOBehavior : NetworkBehaviour
 
     IEnumerator TestingSendUFO()
     {
-        yield return new WaitForSeconds(30);
+        yield return new WaitForSeconds(5);
         AcquireTarget(GuyBehavior.activeGuys.RandomEntry().transform);      
     }
 
@@ -207,7 +207,7 @@ public class UFOBehavior : NetworkBehaviour
     private void ClientInteractionAbductionProcessRpc(RpcParams rpcParams = default)
     {
         Transform targetPass = NetworkManager.LocalClient.PlayerObject.transform;
-        targetPass.gameObject.GetComponent<Rigidbody>().AddForce((transform.position - target.position) * (Time.time - abductionStateChangeTime) / abductionPauseDuration, ForceMode.Acceleration);
+        targetPass.gameObject.GetComponent<Rigidbody>().AddForce((transform.position - target.position), ForceMode.Acceleration);
         targetPass.gameObject.GetComponent<Rigidbody>().useGravity = false;
     }
 
@@ -223,7 +223,7 @@ public class UFOBehavior : NetworkBehaviour
     private void ClientInteractionReturnProcessRpc(RpcParams rpcParams = default)
     {
         Transform targetPass = NetworkManager.LocalClient.PlayerObject.transform;
-        targetPass.gameObject.GetComponent<Rigidbody>().AddForce((transform.position - target.position) * 20, ForceMode.VelocityChange);
+        //targetPass.gameObject.GetComponent<Rigidbody>().AddForce((transform.position - target.position) * 2, ForceMode.VelocityChange);
     }
 
     [Rpc(SendTo.SpecifiedInParams)]
