@@ -6,12 +6,18 @@ using Unity.Netcode;
 [RequireComponent(typeof(AudioListener))]
 public class AudioToggle : MonoBehaviour
 {
-
+    new Camera camera;
     AudioListener listener;
 
     private void Start()
     {
         listener = GetComponent<AudioListener>();
+        camera = GetComponent<Camera>();
+    }
+
+    private void LateUpdate()
+    {
+        camera.fieldOfView = Camera.HorizontalToVerticalFieldOfView(92, camera.aspect);
     }
 
     private void OnGUI()

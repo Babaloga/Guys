@@ -138,7 +138,7 @@ public class GuyBehavior : NetworkBehaviour
     {
         
         guyNametag.SetText(m_guyName.Value.ToString());
-        GetComponent<Rigidbody>().velocity = UnityEngine.Random.onUnitSphere * 5;
+        if(IsOwner) GetComponent<Rigidbody>().velocity = UnityEngine.Random.onUnitSphere * 5;
     }
 
     private void OnEnable()
