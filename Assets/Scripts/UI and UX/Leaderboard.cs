@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
 using System.Linq;
+using GoalModes;
 using UnityEngine.UI;
 
 public class Leaderboard : NetworkBehaviour
@@ -13,7 +14,7 @@ public class Leaderboard : NetworkBehaviour
     //public static Dictionary<string, int> bouncesDict;
     //public static Dictionary<string, int> flipsDict;
 
-    public static Dictionary<string, float> leaderDict;
+    //public static Dictionary<string, float> leaderDict;
 
     public static Leaderboard singleton;
 
@@ -25,12 +26,14 @@ public class Leaderboard : NetworkBehaviour
 
     public static NetworkVariable<Goal> currentGoal = new NetworkVariable<Goal>();
 
+    public static IGoalMode GoalObj { get; set; }
+
     public float goalDuration = 0;
     private static float goalStart = 0;
 
     private static List<Goal> unvisited;
 
-    public GameObject runnerCrown;
+    //public GameObject runnerCrown;
     public GameObject ufoPrefab;
 
     private string lastWinner;
@@ -43,8 +46,21 @@ public class Leaderboard : NetworkBehaviour
         Bounces,
         Flips,
         Beans,
-        Runner
+        Runner,
+        Absorption
     }
+
+    private static Dictionary<Goal, IGoalMode> goalObjDict = new Dictionary<Goal, IGoalMode>
+    {
+        { Goal.Lifetime, new Lifetime() },
+        { Goal.Kills, new Kills() },
+        { Goal.Altitude, new Altitude() },
+        { Goal.Bounces, new Bounces() },
+        { Goal.Flips, new Flips() },
+        { Goal.Beans, new BeanCollection() },
+        { Goal.Runner, new Runner() },
+        { Goal.Absorption, new Absorption() }
+    };
 
     private void Start()
     {
@@ -70,7 +86,7 @@ public class Leaderboard : NetworkBehaviour
 
     private static void ResetUnvisited()
     {
-        unvisited.AddRange(new Goal[]{ Goal.Kills, Goal.Altitude, Goal.Bounces, Goal.Flips, Goal.Beans, Goal.Runner});
+        unvisited.AddRange(new Goal[]{ Goal.Kills, Goal.Altitude, Goal.Bounces, Goal.Flips, Goal.Beans, Goal.Runner, Goal.Absorption});
     }
 
     private static void InitiateGoal(Goal goal)
@@ -78,38 +94,14 @@ public class Leaderboard : NetworkBehaviour
         currentGoal.Value = goal;
         goalStart = NetworkManager.Singleton.ServerTime.TimeAsFloat;
         unvisited.Remove(goal);
+        GoalObj = goalObjDict[goal];
+        GoalObj.InitRpc();
 
         print(currentGoal.Value);
-
-        leaderDict = new Dictionary<string, float>();
-
-        if (currentGoal.Value == Goal.Beans) BeansSupervisor.singleton.BeginBeanPhase();
-        else if (currentGoal.Value == Goal.Runner && NetworkManager.Singleton.IsServer) BeansSupervisor.singleton.BeginRunnerPhase();
-        //switch (currentGoal.Value)
-        //{
-        //    case Goal.Lifetime:
-        //        lifetimeDict = new Dictionary<string, float>();
-        //        break;
-
-        //    case Goal.Kills:
-        //        killsDict = new Dictionary<string, int>();
-        //        break;
-
-        //    case Goal.Flips:
-        //        flipsDict = new Dictionary<string, int>();
-        //        break;
-
-        //    case Goal.Bounces:
-        //        bouncesDict = new Dictionary<string, int>();
-        //        break;
-
-        //    case Goal.Altitude:
-        //        altitudeDict = new Dictionary<string, float>();
-        //        break;
-        //}
     }
     
     #region Log Calls
+    /*
     public static void LogFlips(string guyName, int count)
     {
         print(guyName + " called LogFlips with " + count);
@@ -202,6 +194,7 @@ public class Leaderboard : NetworkBehaviour
             leaderDict[guyName] = 0;
         }
     }
+    */
     #endregion
     
     private void LateUpdate()
@@ -222,7 +215,7 @@ public class Leaderboard : NetworkBehaviour
                         g.m_legacyCrown.Value = true;
                         g.m_crownActive.Value = false;
 
-                        string guyName = g.m_guyName.Value.ToString();
+                        string guyName = g.GuyName;
 
                         if (guyName == lastWinner)
                         {
@@ -254,8 +247,7 @@ public class Leaderboard : NetworkBehaviour
                     ResetUnvisited();
                 }
 
-                if (currentGoal.Value == Goal.Beans) BeansSupervisor.singleton.EndBeanPhase();
-                else if (currentGoal.Value == Goal.Runner) BeansSupervisor.singleton.EndRunnerPhase();
+                GoalObj.EndRpc();
 
                 string toPrint = "";
                 foreach (Goal g in unvisited)
@@ -281,43 +273,8 @@ public class Leaderboard : NetworkBehaviour
     private void ConstructLeaderboard()
     {
         string displayText = "<b><align=\"center\">Top Five Guys™</b>\n";
-        IOrderedEnumerable<KeyValuePair<string, float>> sortedDictionary = leaderDict.OrderByDescending(pair => pair.Value);
-        string unit;
-
-        switch (currentGoal.Value)
-        {
-            case Goal.Lifetime:
-                unit = "s";
-                break;
-
-            case Goal.Kills:
-                unit = "kills";
-                break;
-
-            case Goal.Flips:
-                unit = "flips";
-                break;
-
-            case Goal.Bounces:
-                unit = "bounces";
-                break;
-
-            case Goal.Altitude:
-                unit = "m";
-                break;
-
-            case Goal.Beans:
-                unit = "\"Beans\"";
-                break;
-
-            case Goal.Runner:
-                unit = "rad crown";
-                break;
-
-            default:
-                unit = "Guys™";
-                break;
-        }
+        IOrderedEnumerable<KeyValuePair<string, float>> sortedDictionary = GoalObj.OrderedLeaderboardDictionary;
+        string unit = GoalObj.Unit;
 
         for (int i = 0; i < Mathf.Clamp(5, 0, sortedDictionary.Count()); i++)
         {
@@ -329,7 +286,7 @@ public class Leaderboard : NetworkBehaviour
         {
             foreach (GuyBehavior g in GuyBehavior.activeGuys)
             {
-                if (g.m_guyName.Value.ToString() == sortedDictionary.ElementAt(0).Key)
+                if (g.GuyName == sortedDictionary.ElementAt(0).Key)
                 {
                     g.m_crownActive.Value = true;
                 }

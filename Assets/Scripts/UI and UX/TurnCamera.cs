@@ -7,7 +7,7 @@ using Unity.Netcode;
 public class TurnCamera : MonoBehaviour
 {
     public float buffer = 50f;
-    Camera camera;
+    new Camera camera;
     GameObject target;
 
     void Start()

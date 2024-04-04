@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 public class OffscreenPointer : MonoBehaviour
 {
-    public Camera camera;
+    new public Camera camera;
     public GameObject pointerPrefab;
     Dictionary<GuyBehavior, GameObject> activePointers;
 
@@ -53,7 +53,7 @@ public class OffscreenPointer : MonoBehaviour
                 pointer.GetComponent<RectTransform>().anchoredPosition = new Vector3(Mathf.Clamp(screenPosObj.x, 0, Screen.width), 0, 0);
 
                 TMPro.TMP_Text text = pointer.GetComponentInChildren<TMPro.TMP_Text>();
-                text.text = string.Format("{0}\n{1}m", gb.m_guyName.Value, gb.transform.position.y.ToString("#######0.0"));
+                text.text = string.Format("{0}\n{1}m", gb.GuyName, gb.transform.position.y.ToString("#######0.0"));
 
             }
             else

@@ -19,7 +19,6 @@ public class BeansSupervisor : MonoBehaviour
     public float spawnHeight = 10;
     public float spawnRadius = 10;
 
-    private float lastBeanSpawn = 0;
     private float nextBeanSpawn = 0;
 
     public GameObject runnerCrown;

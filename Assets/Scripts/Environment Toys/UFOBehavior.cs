@@ -6,7 +6,7 @@ using UnityEngine.Splines;
 
 public class UFOBehavior : NetworkBehaviour
 {
-    public Camera camera;
+    new public Camera camera;
     public GameObject glint;
 
     public float vertOffset;

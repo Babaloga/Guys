@@ -15,11 +15,12 @@ public class GuyBehavior : NetworkBehaviour
 
     public bool cameraRelativeMovement = false;
 
-    public NetworkVariable<FixedString64Bytes> m_guyName = new NetworkVariable<FixedString64Bytes>();
+    public string GuyName { get { return m_guyName.Value.ToString(); } }
 
-    public NetworkVariable<FixedString64Bytes> m_lastHit = new NetworkVariable<FixedString64Bytes>();
+    private NetworkVariable<FixedString64Bytes> m_guyName = new NetworkVariable<FixedString64Bytes>();
+    private NetworkVariable<bool> m_emitParticles = new NetworkVariable<bool>(default, default, NetworkVariableWritePermission.Owner);
 
-    TMPro.TMP_Text guyNametag;
+    public TMPro.TMP_Text guyNametag;
     Rigidbody rb;
     new AudioSource audio;
     ParticleSystem particles;
@@ -29,9 +30,14 @@ public class GuyBehavior : NetworkBehaviour
     string[] namesList2;
     string[] nouns;
 
+    public bool Grounded { get { return grounded; } }
+    public Vector3 Velocity { get { return rb.velocity; } }
+
     bool grounded = true;
 
     private float startTime;
+
+    public float StartTime { get { return startTime; } }
 
     public GameObject playerRing;
     public GameObject playerCrown;
@@ -43,10 +49,6 @@ public class GuyBehavior : NetworkBehaviour
 
     public AudioClip[] lowClips;
     public AudioClip[] highClips;
-
-    private int consecutiveBounces = 0;
-    private int consecutiveFlips = 0;
-    private bool flipEligible = false;
 
     public NetworkVariable<bool> m_crownActive = new NetworkVariable<bool>(false);
     public NetworkVariable<bool> m_legacyCrown = new NetworkVariable<bool>(false);
@@ -92,7 +94,7 @@ public class GuyBehavior : NetworkBehaviour
 
             nouns = nounsListIn.Split('\n');
 
-            m_lastHit.Value = "";
+            //m_lastHit.Value = "";
 
             int rand = UnityEngine.Random.Range(0, 1000);
             if (rand < 1)
@@ -149,8 +151,7 @@ public class GuyBehavior : NetworkBehaviour
 
     public override void OnNetworkDespawn()
     {
-        print("OnDestroy Called");
-        Leaderboard.LogDestroyed(m_guyName.Value.ToString());
+        if(IsServer) Leaderboard.GoalObj.LogEventOnDestroyedRpc(this);
 
         activeGuys.Remove(this);
 
@@ -169,7 +170,7 @@ public class GuyBehavior : NetworkBehaviour
     {
         grounded = false;
         RaycastHit groundRay;
-        if(Physics.Raycast(transform.position, Vector3.down, out groundRay, 0.51f))
+        if(Physics.Raycast(transform.position, Vector3.down, out groundRay, 0.51f * transform.localScale.y))
         {
             if(groundRay.collider.gameObject.tag != "Slippery")
             {
@@ -228,25 +229,28 @@ public class GuyBehavior : NetworkBehaviour
 
         if (IsServer)
         {
-            UpdateLeaderboard();
+            Leaderboard.GoalObj.LogEventOnUpdateRpc(this);
         }
 
         if (!grounded)
         {
             lastTimeAirborne = Time.time;
-            if (particles != null) particleEmission.enabled = false;
+            if (IsOwner && particles != null)
+            {
+                m_emitParticles.Value = false;
+            }
         }
-        else if (rb.velocity.sqrMagnitude > 25)
+        else if (IsOwner && rb.velocity.sqrMagnitude > 9)
         {
-            if (particles != null) particleEmission.enabled = true;
+            if (particles != null)
+            {
+                m_emitParticles.Value = true;
+            }
         }
+
+        particleEmission.enabled = m_emitParticles.Value;
 
         if (!IsOwner) return;
-
-        if (m_lastHit.Value != "" && (rb.velocity.sqrMagnitude < 25))
-        {
-            UnsetLastHitRpc();
-        }
 
         ApplyMovementRPC(Input.GetButtonDown("Jump"));
 
@@ -261,60 +265,60 @@ public class GuyBehavior : NetworkBehaviour
         }
     }
 
-    [Rpc(SendTo.Server)]
-    private void UnsetLastHitRpc()
-    {
-        print("UNSETTING LAST HIT");
-        m_lastHit.Value = "";
-    }
+    //[Rpc(SendTo.Server)]
+    //private void UnsetLastHitRpc()
+    //{
+    //    print("UNSETTING LAST HIT");
+    //    m_lastHit.Value = "";
+    //}
 
     private void UpdateLeaderboard()
     {
-        switch (Leaderboard.currentGoal.Value)
-        {
-            case Leaderboard.Goal.Lifetime:
-                Leaderboard.LogLifetime(m_guyName.Value.ToString(), Time.time - startTime);
-                break;
+        //switch (Leaderboard.currentGoal.Value)
+        //{
+        //    case Leaderboard.Goal.Lifetime:
+        //        Leaderboard.LogLifetime(m_guyName.Value.ToString(), Time.time - startTime);
+        //        break;
 
-            case Leaderboard.Goal.Altitude:
-                Leaderboard.LogAltitude(m_guyName.Value.ToString(), transform.position.y);
-                break;
+        //    case Leaderboard.Goal.Altitude:
+        //        Leaderboard.LogAltitude(m_guyName.Value.ToString(), transform.position.y);
+        //        break;
 
-            case Leaderboard.Goal.Bounces:
-                if(grounded) consecutiveBounces = 0;
-                break;
+        //    case Leaderboard.Goal.Bounces:
+        //        if(grounded) consecutiveBounces = 0;
+        //        break;
 
-            case Leaderboard.Goal.Flips:
+        //    case Leaderboard.Goal.Flips:
 
-                //print(string.Format("{0} | Grounded: {1}, FlipEligible: {2}", m_guyName.Value.ToString(), grounded, flipEligible));
+        //        //print(string.Format("{0} | Grounded: {1}, FlipEligible: {2}", m_guyName.Value.ToString(), grounded, flipEligible));
 
-                if (grounded)
-                {
-                    consecutiveFlips = 0;
-                    flipEligible = true;
-                }
-                else
-                {
-                    if (flipEligible)
-                    {
-                        if(Vector3.Angle(transform.up, Vector3.down) < 45)
-                        {
-                            flipEligible = false;
-                            consecutiveFlips++;
-                            Leaderboard.LogFlips(m_guyName.Value.ToString(), consecutiveFlips);
-                        }
-                    }
-                    else
-                    {
-                        if (Vector3.Angle(transform.up, Vector3.up) < 45)
-                        {
-                            flipEligible = true;
-                        }
-                    }
-                }
+        //        if (grounded)
+        //        {
+        //            consecutiveFlips = 0;
+        //            flipEligible = true;
+        //        }
+        //        else
+        //        {
+        //            if (flipEligible)
+        //            {
+        //                if(Vector3.Angle(transform.up, Vector3.down) < 45)
+        //                {
+        //                    flipEligible = false;
+        //                    consecutiveFlips++;
+        //                    Leaderboard.LogFlips(m_guyName.Value.ToString(), consecutiveFlips);
+        //                }
+        //            }
+        //            else
+        //            {
+        //                if (Vector3.Angle(transform.up, Vector3.up) < 45)
+        //                {
+        //                    flipEligible = true;
+        //                }
+        //            }
+        //        }
 
-                break;
-        }
+        //        break;
+        //}
     }
 
     private bool setToDestroy = false;
@@ -325,19 +329,21 @@ public class GuyBehavior : NetworkBehaviour
         if (!setToDestroy)
         {
             setToDestroy = true;
-            ulong clientID = OwnerClientId;
-
-            print("Register Death, Server: " + IsServer + ". lastHit: " + m_lastHit.Value.ToString());
-
-            if (m_lastHit.Value != "") Leaderboard.LogDeath(m_lastHit.Value.ToString());
 
             DeathExplosionRpc();
-            GetComponent<NetworkObject>().Despawn();
-
-            NetworkObject newPlayer = Instantiate(NetworkManager.NetworkConfig.PlayerPrefab/*, new Vector3(UnityEngine.Random.Range(-3, 3), 5, UnityEngine.Random.Range(-3, 3)), Quaternion.identity*/).GetComponent<NetworkObject>();
-
-            newPlayer.SpawnAsPlayerObject(clientID);
+            
+            KillAndRespawnRpc();
         }
+    }
+
+    [Rpc(SendTo.Server)]
+    public void KillAndRespawnRpc()
+    {
+        ulong clientID = OwnerClientId;
+        GetComponent<NetworkObject>().Despawn();
+        NetworkObject newPlayer = Instantiate(NetworkManager.NetworkConfig.PlayerPrefab/*, new Vector3(UnityEngine.Random.Range(-3, 3), 5, UnityEngine.Random.Range(-3, 3)), Quaternion.identity*/).GetComponent<NetworkObject>();
+
+        newPlayer.SpawnAsPlayerObject(clientID);
     }
 
     [Rpc(SendTo.ClientsAndHost)]
@@ -375,56 +381,38 @@ public class GuyBehavior : NetworkBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        if (collision.gameObject.GetComponent<GuyBehavior>())
+        if (collision.gameObject.GetComponent<GuyBehavior>() && collision.gameObject.GetComponent<GuyBehavior>().IsSpawned)
         {
             float collisionSpeed = collision.relativeVelocity.sqrMagnitude;
             Vector3 relativePosition = (transform.position - collision.transform.position).normalized;
 
-            //if(relativePosition.y > Vector3.ProjectOnPlane(relativePosition, Vector3.up).magnitude) RegisterBouncesRpc();
-            if (relativePosition.y > 0) RegisterBouncesRpc();
-
-            FixedString64Bytes otherGuyName = collision.gameObject.GetComponent<GuyBehavior>().m_guyName.Value;
-
-            RegisterPlayerCollisionRpc(otherGuyName);
-
             CollisionRpc(collisionSpeed, relativePosition, collision.contacts[0].point);
-            //rb.AddForce(relativePosition * collisionSpeed * 3);
+            CallCollisionRpc(collision.gameObject.GetComponent<NetworkObject>());
         }
+    }
+
+    [Rpc(SendTo.Server)]
+    private void CallCollisionRpc(NetworkObjectReference objRef)
+    {
+        Leaderboard.GoalObj.LogEventOnCollisionRpc(this, objRef);
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.GetComponent<Beans>())
-        {
-            if (IsServer)
-            {
-                Leaderboard.LogBeanPickup(m_guyName.Value.ToString());
-                other.GetComponent<NetworkObject>().Despawn();
-            }
-        }
-        else if (other.tag == "RunnerCrown")
-        {
-            if (IsServer)
-            {
-                Leaderboard.LogCrownPickup(m_guyName.Value.ToString());
-                other.GetComponent<NetworkObject>().Despawn();
-            }
-        }
+        NetworkObject netObj = other.gameObject.GetComponent<NetworkObject>();
+        if (netObj != null && netObj.IsSpawned) CallTriggerRpc(netObj);
     }
 
     [Rpc(SendTo.Server)]
-    private void RegisterBouncesRpc()
+    private void CallTriggerRpc(NetworkObjectReference objRef)
     {
-        consecutiveBounces++;
-        Leaderboard.LogBounces(m_guyName.Value.ToString(), consecutiveBounces);
+        Leaderboard.GoalObj.LogEventOnTriggerRpc(this, objRef);
     }
 
-    [Rpc(SendTo.Server)]
-    private void RegisterPlayerCollisionRpc(FixedString64Bytes otherGuyName)
+    [Rpc(SendTo.Owner)]
+    public void SetScaleRpc(Vector3 newScale)
     {
-        m_lastHit.Value = otherGuyName;
-        print("Is Server: " + IsServer + ". Last Hit was just set to " + m_lastHit.Value + ".");
-        Leaderboard.LogCollision(m_guyName.Value.ToString(), otherGuyName.ToString());
+        transform.localScale = newScale;
     }
 
     [Rpc(SendTo.ClientsAndHost)]

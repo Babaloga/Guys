@@ -65,10 +65,19 @@ class BuildAutomation : EditorWindow
 
         GUILayout.EndHorizontal();
 
-        if(GUILayout.Button("Windows Server"))
+        GUILayout.BeginHorizontal();
+
+        if (GUILayout.Button("Windows Server"))
         {
             BuildWindowsServer();
         }
+
+        if (GUILayout.Button("Linux Server"))
+        {
+            BuildLinuxServer();
+        }
+
+        GUILayout.EndHorizontal();
     }
 
     private void BuildWindowsAndLinux()
@@ -111,6 +120,42 @@ class BuildAutomation : EditorWindow
         if (summary.result == BuildResult.Failed)
         {
             Debug.Log("Windows Server Build failed");
+        }
+    }
+
+    private void BuildLinuxServer()
+    {
+        if (EditorSceneManager.GetActiveScene().name != "SampleScene")
+        {
+            EditorSceneManager.LoadScene("Scenes/SampleScene");
+        }
+        HelloWorldManager netUI = GameObject.Find("Network UI").GetComponent<HelloWorldManager>();
+        netUI.server = true;
+        netUI.host = false;
+        EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
+        EditorSceneManager.SaveOpenScenes();
+
+        string name = string.Format("LinuxServer{0}.{1}", majorVersionNumber, minorVersionNumber);
+        string path = "Builds/" + name;
+
+        BuildPlayerOptions buildPlayerOptions = new BuildPlayerOptions();
+        buildPlayerOptions.scenes = new[] { "Assets/Scenes/SampleScene.unity" };
+        buildPlayerOptions.locationPathName = path + "/" + name + ".x86_64";
+        buildPlayerOptions.target = BuildTarget.StandaloneLinux64;
+        buildPlayerOptions.options = BuildOptions.None;
+
+        BuildReport report = BuildPipeline.BuildPlayer(buildPlayerOptions);
+        BuildSummary summary = report.summary;
+
+        if (summary.result == BuildResult.Succeeded)
+        {
+            Debug.Log("Linux Server Build succeeded: " + summary.totalSize + " bytes");
+            ZipBuild(name, path);
+        }
+
+        if (summary.result == BuildResult.Failed)
+        {
+            Debug.Log("Linux Server Build failed");
         }
     }
 
