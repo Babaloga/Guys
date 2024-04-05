@@ -45,8 +45,8 @@ namespace GoalModes {
         public void LogEventOnDestroyedRpc(GuyBehavior guy)
         {
             string killerName = "";
-
-            if (lastHits.TryGetValue(guy.GuyName, out killerName))
+            lastHits.TryGetValue(guy.GuyName, out killerName);
+            if (killerName != "")
             {
                 float count = 0;
                 LeaderDict.TryGetValue(killerName, out count);
@@ -56,7 +56,7 @@ namespace GoalModes {
 
         public void LogEventOnUpdateRpc(GuyBehavior guy)
         {
-            if (guy.Grounded && guy.Velocity.sqrMagnitude < 4) lastHits[guy.GuyName] = "";
+            if (guy.Grounded && guy.Velocity.sqrMagnitude < 64) lastHits[guy.GuyName] = "";
 
             return;
         }

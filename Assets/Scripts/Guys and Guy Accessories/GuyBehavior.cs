@@ -19,6 +19,7 @@ public class GuyBehavior : NetworkBehaviour
 
     private NetworkVariable<FixedString64Bytes> m_guyName = new NetworkVariable<FixedString64Bytes>();
     private NetworkVariable<bool> m_emitParticles = new NetworkVariable<bool>(default, default, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<Vector3> m_velocity = new NetworkVariable<Vector3>(default, default, NetworkVariableWritePermission.Owner);
 
     public TMPro.TMP_Text guyNametag;
     Rigidbody rb;
@@ -31,7 +32,7 @@ public class GuyBehavior : NetworkBehaviour
     string[] nouns;
 
     public bool Grounded { get { return grounded; } }
-    public Vector3 Velocity { get { return rb.velocity; } }
+    public Vector3 Velocity { get { return m_velocity.Value; } }
 
     bool grounded = true;
 
@@ -53,6 +54,10 @@ public class GuyBehavior : NetworkBehaviour
     public NetworkVariable<bool> m_crownActive = new NetworkVariable<bool>(false);
     public NetworkVariable<bool> m_legacyCrown = new NetworkVariable<bool>(false);
 
+    private float lastLeaderboardUpdateTime = 0;
+    private bool setToDestroy = false;
+
+    #region Startup
     public override void OnNetworkSpawn()
     {
         if (activeGuys == null) activeGuys = new List<GuyBehavior>();
@@ -148,7 +153,9 @@ public class GuyBehavior : NetworkBehaviour
         if (activeGuys == null) activeGuys = new List<GuyBehavior>();
         activeGuys.Add(this);
     }
+    #endregion
 
+    #region Destroy and Despawn
     public override void OnNetworkDespawn()
     {
         if(IsServer) Leaderboard.GoalObj.LogEventOnDestroyedRpc(this);
@@ -165,7 +172,10 @@ public class GuyBehavior : NetworkBehaviour
         base.OnDestroy();
     }
 
-    // Update is called once per frame
+    #endregion
+
+    #region Updates
+
     void FixedUpdate()
     {
         grounded = false;
@@ -181,11 +191,12 @@ public class GuyBehavior : NetworkBehaviour
         if (!IsOwner) return;
 
         Vector3 forceDirection = new Vector3(Input.GetAxis("Horizontal"), rb.velocity.y, Input.GetAxis("Vertical")).normalized;
-        ApplyFixedMovementRPC(forceDirection);
+        C_ApplyFixedMovement(forceDirection);
+
+        m_velocity.Value = rb.velocity;
     }
 
-    //[Rpc(SendTo.Server)]
-    private void ApplyFixedMovementRPC(Vector3 forceDirection)
+    private void C_ApplyFixedMovement(Vector3 forceDirection)
     {
         float forceMagnitude = Time.fixedDeltaTime * speed;
 
@@ -203,23 +214,13 @@ public class GuyBehavior : NetworkBehaviour
 
         if (grounded)
         {
-            //if (forceDirection == Vector3.zero)
-            //{
-            //    rb.AddForce(0.5f * speed * Time.fixedDeltaTime * -rb.velocity);
-            //}
-            //else
-            //{
-                rb.AddForce(forceDirection * forceMagnitude);
-            //}
+            rb.AddForce(forceDirection * forceMagnitude);
         }
         else
         {
             rb.AddForce(forceDirection * (forceMagnitude / 5f));
         }
     }
-
-    private float lastLeaderboardUpdateTime = 0;
-    private float lastTimeAirborne = 0;
 
     private void Update()
     {
@@ -234,7 +235,6 @@ public class GuyBehavior : NetworkBehaviour
 
         if (!grounded)
         {
-            lastTimeAirborne = Time.time;
             if (IsOwner && particles != null)
             {
                 m_emitParticles.Value = false;
@@ -252,7 +252,7 @@ public class GuyBehavior : NetworkBehaviour
 
         if (!IsOwner) return;
 
-        ApplyMovementRPC(Input.GetButtonDown("Jump"));
+        C_ApplyMovement(Input.GetButtonDown("Jump"));
 
         if(Time.time - lastLeaderboardUpdateTime >= 0.25f)
         {
@@ -265,63 +265,31 @@ public class GuyBehavior : NetworkBehaviour
         }
     }
 
-    //[Rpc(SendTo.Server)]
-    //private void UnsetLastHitRpc()
-    //{
-    //    print("UNSETTING LAST HIT");
-    //    m_lastHit.Value = "";
-    //}
-
-    private void UpdateLeaderboard()
+    private void C_ApplyMovement(bool jumping)
     {
-        //switch (Leaderboard.currentGoal.Value)
-        //{
-        //    case Leaderboard.Goal.Lifetime:
-        //        Leaderboard.LogLifetime(m_guyName.Value.ToString(), Time.time - startTime);
-        //        break;
+        if (jumping && grounded)
+            rb.AddForce(Vector3.up * jumpSpeed, ForceMode.VelocityChange);
 
-        //    case Leaderboard.Goal.Altitude:
-        //        Leaderboard.LogAltitude(m_guyName.Value.ToString(), transform.position.y);
-        //        break;
+        if (grounded && Vector3.Angle(transform.up, Vector3.up) < 90f)
+        {
+            consecutiveUngroundedFrames = 0;
 
-        //    case Leaderboard.Goal.Bounces:
-        //        if(grounded) consecutiveBounces = 0;
-        //        break;
+            rb.constraints = RigidbodyConstraints.FreezeRotation;
+            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.Euler(Vector3.zero), 40 * Time.deltaTime);
+        }
+        else
+        {
+            consecutiveUngroundedFrames++;
+            rb.constraints = RigidbodyConstraints.None;
 
-        //    case Leaderboard.Goal.Flips:
-
-        //        //print(string.Format("{0} | Grounded: {1}, FlipEligible: {2}", m_guyName.Value.ToString(), grounded, flipEligible));
-
-        //        if (grounded)
-        //        {
-        //            consecutiveFlips = 0;
-        //            flipEligible = true;
-        //        }
-        //        else
-        //        {
-        //            if (flipEligible)
-        //            {
-        //                if(Vector3.Angle(transform.up, Vector3.down) < 45)
-        //                {
-        //                    flipEligible = false;
-        //                    consecutiveFlips++;
-        //                    Leaderboard.LogFlips(m_guyName.Value.ToString(), consecutiveFlips);
-        //                }
-        //            }
-        //            else
-        //            {
-        //                if (Vector3.Angle(transform.up, Vector3.up) < 45)
-        //                {
-        //                    flipEligible = true;
-        //                }
-        //            }
-        //        }
-
-        //        break;
-        //}
+            if (consecutiveUngroundedFrames <= 10)
+            {
+                transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.Euler(Vector3.zero), 40 * Time.deltaTime);
+            }
+        }
     }
 
-    private bool setToDestroy = false;
+    #endregion
 
     [Rpc(SendTo.Server)]
     public void KillMeRpc()
@@ -354,30 +322,13 @@ public class GuyBehavior : NetworkBehaviour
 
     private int consecutiveUngroundedFrames = 0;
 
-    //[Rpc(SendTo.Server)]
-    private void ApplyMovementRPC(bool jumping)
+    [Rpc(SendTo.Owner)]
+    public void SetScaleRpc(Vector3 newScale)
     {
-        if (jumping && grounded)
-            rb.AddForce(Vector3.up * jumpSpeed, ForceMode.VelocityChange);
-
-        if (grounded && Vector3.Angle(transform.up, Vector3.up) < 90f)
-        {
-            consecutiveUngroundedFrames = 0;
-
-            rb.constraints = RigidbodyConstraints.FreezeRotation;
-            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.Euler(Vector3.zero), 40 * Time.deltaTime);
-        }
-        else
-        {
-            consecutiveUngroundedFrames++;
-            rb.constraints = RigidbodyConstraints.None;
-
-            if(consecutiveUngroundedFrames <= 10)
-            {
-                transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.Euler(Vector3.zero), 40 * Time.deltaTime);
-            }
-        }
+        transform.localScale = newScale;
     }
+
+    #region Collision And Trigger
 
     private void OnCollisionEnter(Collision collision)
     {
@@ -389,30 +340,6 @@ public class GuyBehavior : NetworkBehaviour
             CollisionRpc(collisionSpeed, relativePosition, collision.contacts[0].point);
             CallCollisionRpc(collision.gameObject.GetComponent<NetworkObject>());
         }
-    }
-
-    [Rpc(SendTo.Server)]
-    private void CallCollisionRpc(NetworkObjectReference objRef)
-    {
-        Leaderboard.GoalObj.LogEventOnCollisionRpc(this, objRef);
-    }
-
-    private void OnTriggerEnter(Collider other)
-    {
-        NetworkObject netObj = other.gameObject.GetComponent<NetworkObject>();
-        if (netObj != null && netObj.IsSpawned) CallTriggerRpc(netObj);
-    }
-
-    [Rpc(SendTo.Server)]
-    private void CallTriggerRpc(NetworkObjectReference objRef)
-    {
-        Leaderboard.GoalObj.LogEventOnTriggerRpc(this, objRef);
-    }
-
-    [Rpc(SendTo.Owner)]
-    public void SetScaleRpc(Vector3 newScale)
-    {
-        transform.localScale = newScale;
     }
 
     [Rpc(SendTo.ClientsAndHost)]
@@ -433,6 +360,27 @@ public class GuyBehavior : NetworkBehaviour
         }
         rb.AddForceAtPosition(relativePosition * collisionSpeed * 2, contactPoint);
     }
+
+    [Rpc(SendTo.Server)]
+    private void CallCollisionRpc(NetworkObjectReference objRef)
+    {
+        Leaderboard.GoalObj.LogEventOnCollisionRpc(this, objRef);
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        NetworkObject netObj = other.gameObject.GetComponent<NetworkObject>();
+        if (netObj != null && netObj.IsSpawned) CallTriggerRpc(netObj);
+    }
+
+    [Rpc(SendTo.Server)]
+    private void CallTriggerRpc(NetworkObjectReference objRef)
+    {
+        Leaderboard.GoalObj.LogEventOnTriggerRpc(this, objRef);
+    }
+
+    #endregion
+
 }
 
 public static class RandomExtension

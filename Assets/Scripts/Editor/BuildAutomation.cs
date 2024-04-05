@@ -85,6 +85,7 @@ class BuildAutomation : EditorWindow
         BuildWindowsServer();
         BuildWindowsClient();
         BuildLinuxClient();
+        BuildLinuxServer();
     }
 
     private void BuildWindowsServer()
