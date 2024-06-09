@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
+using System.Net;
 
 public class HelloWorldManager : MonoBehaviour
 {
@@ -20,6 +21,10 @@ public class HelloWorldManager : MonoBehaviour
         }
         else
         {
+            var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport as Unity.Netcode.Transports.UTP.UnityTransport;
+
+            print(Dns.GetHostEntry("play.babaloga.me").AddressList[0].ToString());
+            transport.ConnectionData.Address = Dns.GetHostEntry("play.babaloga.me").AddressList[0].ToString();
             NetworkManager.Singleton.StartClient();
         }
     }
