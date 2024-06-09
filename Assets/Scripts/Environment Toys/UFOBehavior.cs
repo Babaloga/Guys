@@ -59,9 +59,9 @@ public class UFOBehavior : NetworkBehaviour
         if(mothership == null) mothership = Leaderboard.singleton.Orbs.RandomEntry();
         Vector3 camRelative = camera.transform.position - transform.position;
         glint.transform.parent.rotation = Quaternion.LookRotation(-camRelative);
-        glint.transform.localScale = Vector3.one * Mathf.Clamp((camRelative.sqrMagnitude/2000000f) * Mathf.PerlinNoise1D(Time.time * 100f), 0, Mathf.Infinity);
+        glint.transform.localScale = Vector3.one * Mathf.Clamp((camRelative.sqrMagnitude/1000000f) * Mathf.PerlinNoise1D(Time.time * 100f), 0, Mathf.Infinity);
 
-        glint.SetActive(camRelative.sqrMagnitude > 90000);
+        glint.SetActive(camRelative.sqrMagnitude > 60000);
 
         if (IsServer)
         {
@@ -163,20 +163,18 @@ public class UFOBehavior : NetworkBehaviour
     private Spline GenerateSpline()
     {
         Vector3 shadowVector = (mothership.transform.position - camera.transform.position).normalized;
-        Vector3 startPos = mothership.transform.position + (shadowVector * 500);
+        Vector3 startPos = mothership.transform.position + (shadowVector * 50);
         Vector3 endPos = target.position + (Vector3.up * vertOffset);
         Vector3 midPos = ((startPos + endPos) / 2f) + (-Vector3.right * startPos.magnitude / 5f);
-        Vector3 approachPos = endPos + (midPos - endPos).normalized * 20;
-        approachPos.y = endPos.y;
+        midPos.y = Mathf.Clamp(midPos.y, 0, Mathf.Infinity);
 
         BezierKnot startKnot = new BezierKnot(startPos, Quaternion.AngleAxis(90, Vector3.up) * shadowVector, Quaternion.AngleAxis(90, Vector3.up) * shadowVector);
-        BezierKnot midKnot = new BezierKnot(midPos, shadowVector * 2000, -shadowVector * 2000);
+        BezierKnot midKnot = new BezierKnot(midPos, shadowVector * 1500, -shadowVector * 1500);
         BezierKnot endKnot = new BezierKnot(endPos, Quaternion.AngleAxis(-90, Vector3.up) * shadowVector, Quaternion.AngleAxis(-90, Vector3.up) * shadowVector);
 
         Spline toReturn = new Spline(4, false);
         toReturn.Add(startKnot);
         toReturn.Add(midKnot);
-        toReturn.Add(new BezierKnot(approachPos), TangentMode.AutoSmooth);
         toReturn.Add(endKnot);
         return toReturn;
     }
@@ -184,20 +182,18 @@ public class UFOBehavior : NetworkBehaviour
     private Spline GenerateReturnSpline()
     {
         Vector3 shadowVector = (mothership.transform.position - camera.transform.position).normalized;
-        Vector3 startPos = mothership.transform.position + (shadowVector * 500);
+        Vector3 startPos = mothership.transform.position + (shadowVector * 50);
         Vector3 endPos = transform.position;
         Vector3 midPos = ((startPos + endPos) / 2f) + (-Vector3.right * startPos.magnitude / 5f);
-        Vector3 approachPos = endPos + (midPos - endPos).normalized * 20;
-        approachPos.y = endPos.y;
+        midPos.y = Mathf.Clamp(midPos.y, 0, Mathf.Infinity);
 
         BezierKnot startKnot = new BezierKnot(startPos, Quaternion.AngleAxis(90, Vector3.up) * shadowVector, Quaternion.AngleAxis(90, Vector3.up) * shadowVector);
-        BezierKnot midKnot = new BezierKnot(midPos, shadowVector * 2000, -shadowVector * 2000);
+        BezierKnot midKnot = new BezierKnot(midPos, shadowVector * 1500, -shadowVector * 1500);
         BezierKnot endKnot = new BezierKnot(endPos, Quaternion.AngleAxis(-90, Vector3.up) * shadowVector, Quaternion.AngleAxis(-90, Vector3.up) * shadowVector);
 
         Spline toReturn = new Spline(4, false);
         toReturn.Add(startKnot);
         toReturn.Add(midKnot);
-        toReturn.Add(new BezierKnot(approachPos), TangentMode.AutoSmooth);
         toReturn.Add(endKnot);
         return toReturn;
     }

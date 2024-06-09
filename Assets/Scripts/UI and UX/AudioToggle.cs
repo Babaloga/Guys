@@ -18,6 +18,8 @@ public class AudioToggle : MonoBehaviour
     private void LateUpdate()
     {
         camera.fieldOfView = Camera.HorizontalToVerticalFieldOfView(92, camera.aspect);
+
+        if (camera.fieldOfView < 65) camera.fieldOfView = 65;
     }
 
     private void OnGUI()

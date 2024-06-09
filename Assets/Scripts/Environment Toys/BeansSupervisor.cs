@@ -38,6 +38,8 @@ public class BeansSupervisor : MonoBehaviour
     {
         if (NetworkManager.Singleton.IsServer)
         {
+            if (GuyBehavior.activeGuys == null) GuyBehavior.activeGuys = new List<GuyBehavior>();
+
             if (inBeanPhase && NetworkManager.Singleton.ServerTime.TimeAsFloat >= nextBeanSpawn)
             {
                 if (masterBeansList.Count < maxBeans)
@@ -48,7 +50,7 @@ public class BeansSupervisor : MonoBehaviour
                 nextBeanSpawn = NetworkManager.Singleton.ServerTime.TimeAsFloat + Random.Range(beansIntervalMin, beansIntervalMax);
             }
 
-            if (Leaderboard.currentGoal.Value == Leaderboard.Goal.Runner && !runnerCrownInstance)
+            if (Leaderboard.singleton.currentGoal.Value == (int)Leaderboard.Goal.Runner && !runnerCrownInstance)
             {
                 bool crownOnTheField = false;
                 foreach (GuyBehavior gb in GuyBehavior.activeGuys)

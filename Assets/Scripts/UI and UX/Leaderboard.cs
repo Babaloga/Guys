@@ -24,7 +24,7 @@ public class Leaderboard : NetworkBehaviour
 
     public Goal startingGoal;
 
-    public static NetworkVariable<Goal> currentGoal = new NetworkVariable<Goal>();
+    public NetworkVariable<int> currentGoal = new NetworkVariable<int>();
 
     public static IGoalMode GoalObj { get; set; }
 
@@ -91,13 +91,13 @@ public class Leaderboard : NetworkBehaviour
 
     private static void InitiateGoal(Goal goal)
     {
-        currentGoal.Value = goal;
+        singleton.currentGoal.Value = (int)goal;
         goalStart = NetworkManager.Singleton.ServerTime.TimeAsFloat;
         unvisited.Remove(goal);
         GoalObj = goalObjDict[goal];
         GoalObj.InitRpc();
 
-        print(currentGoal.Value);
+        print(singleton.currentGoal.Value);
     }
     
     #region Log Calls
@@ -258,7 +258,7 @@ public class Leaderboard : NetworkBehaviour
 
                 Goal nextGoal = unvisited.RandomEntry();
 
-                if(nextGoal == currentGoal.Value)
+                if((int)nextGoal == currentGoal.Value)
                 {
                     nextGoal = unvisited[(int)Mathf.Repeat((int)nextGoal + 1, unvisited.Count)];
                 }

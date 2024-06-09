@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using System.IO;
 using System.Linq;
@@ -57,6 +58,8 @@ public class GuyBehavior : NetworkBehaviour
     private float lastLeaderboardUpdateTime = 0;
     private bool setToDestroy = false;
 
+    private Vector2 moveInput;
+
     #region Startup
     public override void OnNetworkSpawn()
     {
@@ -84,6 +87,15 @@ public class GuyBehavior : NetworkBehaviour
             playerLegacyCrown.transform.localRotation = Quaternion.Euler(UnityEngine.Random.Range(-playerCrown.transform.parent.localRotation.x, 0), 0, 0);
         else
             playerLegacyCrown.transform.localRotation = Quaternion.Euler(UnityEngine.Random.Range(0, -playerCrown.transform.parent.localRotation.x), 0, 0);
+
+        if (IsOwner)
+        {
+            GetComponent<PlayerInput>().enabled = true;
+        }
+        else
+        {
+            Destroy(GetComponent<PlayerInput>());
+        }
 
         if (IsServer)
         {
@@ -190,14 +202,7 @@ public class GuyBehavior : NetworkBehaviour
 
         if (!IsOwner) return;
 
-        Vector3 forceDirection = new Vector3(Input.GetAxis("Horizontal"), rb.velocity.y, Input.GetAxis("Vertical")).normalized;
-        C_ApplyFixedMovement(forceDirection);
-
-        m_velocity.Value = rb.velocity;
-    }
-
-    private void C_ApplyFixedMovement(Vector3 forceDirection)
-    {
+        Vector3 forceDirection = new Vector3(moveInput.x, 0, moveInput.y);
         float forceMagnitude = Time.fixedDeltaTime * speed;
 
         if (cameraRelativeMovement)
@@ -220,6 +225,8 @@ public class GuyBehavior : NetworkBehaviour
         {
             rb.AddForce(forceDirection * (forceMagnitude / 5f));
         }
+
+        m_velocity.Value = rb.velocity;
     }
 
     private void Update()
@@ -252,24 +259,6 @@ public class GuyBehavior : NetworkBehaviour
 
         if (!IsOwner) return;
 
-        C_ApplyMovement(Input.GetButtonDown("Jump"));
-
-        if(Time.time - lastLeaderboardUpdateTime >= 0.25f)
-        {
-            lastLeaderboardUpdateTime = Time.time;
-        }
-
-        if (transform.position.y < -1 || Input.GetButtonUp("KillMe"))
-        {
-            KillMeRpc();
-        }
-    }
-
-    private void C_ApplyMovement(bool jumping)
-    {
-        if (jumping && grounded)
-            rb.AddForce(Vector3.up * jumpSpeed, ForceMode.VelocityChange);
-
         if (grounded && Vector3.Angle(transform.up, Vector3.up) < 90f)
         {
             consecutiveUngroundedFrames = 0;
@@ -287,6 +276,40 @@ public class GuyBehavior : NetworkBehaviour
                 transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.Euler(Vector3.zero), 40 * Time.deltaTime);
             }
         }
+
+        if (Time.time - lastLeaderboardUpdateTime >= 0.25f)
+        {
+            lastLeaderboardUpdateTime = Time.time;
+        }
+
+        if (transform.position.y < -1)
+        {
+            KillMeRpc();
+        }
+    }
+    #endregion
+
+    #region Input
+
+    public void OnMove(InputValue value)
+    {
+        moveInput = value.Get<Vector2>();
+    }
+
+    public void OnMove(Vector2 value)
+    {
+        moveInput = value;
+    }
+
+    public void OnJump()
+    {
+        if (grounded)
+            rb.AddForce(Vector3.up * jumpSpeed, ForceMode.VelocityChange);
+    }
+
+    public void OnKill()
+    {
+        KillMeRpc();
     }
 
     #endregion
