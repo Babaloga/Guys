@@ -7,7 +7,16 @@ public class Beans : NetworkBehaviour
 {
     private void Start()
     {
-        if (IsServer) GetComponent<Rigidbody>().velocity = Random.insideUnitSphere * 5;
+        if (IsServer) 
+        {
+            float randMult = Random.Range(0.3f, 0.5f);
+            GetComponent<Rigidbody>().velocity = new Vector3(-transform.position.x * randMult, 0, -transform.position.z * randMult) + (Random.insideUnitSphere * 5);
+        }
+    }
+
+    private void Update()
+    {
+        if (IsServer && transform.position.y < -10f) Destroy(gameObject);
     }
 
     private void OnEnable()

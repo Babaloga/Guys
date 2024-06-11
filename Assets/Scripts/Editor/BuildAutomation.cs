@@ -58,6 +58,10 @@ class BuildAutomation : EditorWindow
         {
             BuildLinuxClient();
         }
+        if (GUILayout.Button("Web Client"))
+        {
+            BuildWebGLClient();
+        }
         if (GUILayout.Button("Mac Client"))
         {
             BuildMacClient();
@@ -84,6 +88,7 @@ class BuildAutomation : EditorWindow
     {
         BuildWindowsServer();
         BuildWindowsClient();
+        BuildWebGLClient();
         BuildLinuxClient();
         BuildLinuxServer();
     }
@@ -157,6 +162,42 @@ class BuildAutomation : EditorWindow
         if (summary.result == BuildResult.Failed)
         {
             Debug.Log("Linux Server Build failed");
+        }
+    }
+
+    private void BuildWebGLClient()
+    {
+        if (EditorSceneManager.GetActiveScene().name != "SampleScene")
+        {
+            EditorSceneManager.LoadScene("Scenes/SampleScene");
+        }
+        HelloWorldManager netUI = GameObject.Find("Network UI").GetComponent<HelloWorldManager>();
+        netUI.server = false;
+        netUI.host = false;
+        EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
+        EditorSceneManager.SaveOpenScenes();
+
+        string name = string.Format("WebGLClient{0}.{1}", majorVersionNumber, minorVersionNumber);
+        string path = "Builds/" + name;
+
+        BuildPlayerOptions buildPlayerOptions = new BuildPlayerOptions();
+        buildPlayerOptions.scenes = new[] { "Assets/Scenes/SampleScene.unity" };
+        buildPlayerOptions.locationPathName = path + "/Guys.exe";
+        buildPlayerOptions.target = BuildTarget.WebGL;
+        buildPlayerOptions.options = BuildOptions.None;
+
+        BuildReport report = BuildPipeline.BuildPlayer(buildPlayerOptions);
+        BuildSummary summary = report.summary;
+
+        if (summary.result == BuildResult.Succeeded)
+        {
+            Debug.Log("WebGL Client Build succeeded: " + summary.totalSize + " bytes");
+            ZipBuild(name, path);
+        }
+
+        if (summary.result == BuildResult.Failed)
+        {
+            Debug.Log("WebGL Client Build failed");
         }
     }
 

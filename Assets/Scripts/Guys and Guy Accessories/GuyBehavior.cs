@@ -259,7 +259,7 @@ public class GuyBehavior : NetworkBehaviour
             lastLeaderboardUpdateTime = Time.time;
         }
 
-        if (transform.position.y < -1 || Input.GetButtonUp("KillMe"))
+        if (transform.position.y < -5 || Input.GetButtonUp("KillMe"))
         {
             KillMeRpc();
         }

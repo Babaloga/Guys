@@ -19,7 +19,9 @@ public class AirJump : MonoBehaviour
     {
         if (other.attachedRigidbody)
         {
-            other.attachedRigidbody.AddForce((force * (Time.deltaTime/(other.transform.position.y - transform.position.y))) * Vector3.up, ForceMode.Acceleration);
+            Vector3 relative = (other.transform.position - transform.position);
+            float relativeAngleCos = Mathf.Cos(Vector3.Angle(relative, transform.up) * Mathf.Deg2Rad);
+            other.attachedRigidbody.AddForce((force * (Time.deltaTime/(relative.magnitude * relativeAngleCos))) * transform.up, ForceMode.Acceleration);
         }
     }
 }

@@ -12,12 +12,13 @@ public class BeansSupervisor : MonoBehaviour
     public GameObject beanPrefab;
 
     public int startingBeans = 10;
-    public float beansIntervalMin = 1.5f;
-    public float beansIntervalMax = 6f;
+    public float beansIntervalMin = 0.1f;
+    public float beansIntervalMax = 1f;
     public int maxBeans = 30;
 
-    public float spawnHeight = 10;
-    public float spawnRadius = 10;
+    public float spawnHeight = -1;
+    public float beanSpawnRadius = 100;
+    public float crownSpawnRadius = 14;
 
     private float nextBeanSpawn = 0;
 
@@ -48,7 +49,7 @@ public class BeansSupervisor : MonoBehaviour
                 nextBeanSpawn = NetworkManager.Singleton.ServerTime.TimeAsFloat + Random.Range(beansIntervalMin, beansIntervalMax);
             }
 
-            if (Leaderboard.currentGoal.Value == Leaderboard.Goal.Runner && !runnerCrownInstance)
+            if (Leaderboard.singleton.currentGoal.Value == Leaderboard.Goal.Runner && !runnerCrownInstance)
             {
                 bool crownOnTheField = false;
                 foreach (GuyBehavior gb in GuyBehavior.activeGuys)
@@ -101,15 +102,15 @@ public class BeansSupervisor : MonoBehaviour
 
     private void SpawnBean()
     {
-        Vector2 randomPos = Random.insideUnitCircle * spawnRadius;
-        Vector3 spawnPos = new Vector3(randomPos.x, spawnHeight, randomPos.y);
+        Vector3 randomPos = Quaternion.AngleAxis(Random.Range(0f, 359f), Vector3.up) * (Vector3.forward * beanSpawnRadius);
+        Vector3 spawnPos = new Vector3(randomPos.x, spawnHeight, randomPos.z);
         GameObject instance = Instantiate(beanPrefab, spawnPos, Random.rotation);
         instance.GetComponent<NetworkObject>().Spawn();
     }
 
     public void BeginRunnerPhase()
     {
-        Vector2 randomPos = Random.insideUnitCircle * spawnRadius;
+        Vector2 randomPos = Random.insideUnitCircle * crownSpawnRadius;
         Vector3 spawnPos = new Vector3(randomPos.x, 2, randomPos.y);
 
         runnerCrownInstance = Instantiate(runnerCrown, spawnPos, Quaternion.identity);
