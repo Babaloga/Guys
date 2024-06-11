@@ -102,38 +102,85 @@ public class GuyBehavior : NetworkBehaviour
             //m_lastHit.Value = "";
 
             int rand = UnityEngine.Random.Range(0, 1000);
-            if (rand < 1)
+            if (rand < 1) //1
             {
                 m_guyName.Value = string.Concat("Good Ol' ", namesList2.RandomEntry().ToTitleCase(), " ", namesList1.RandomEntry().ToTitleCase()).Replace("\r", "");
             }
-            else if(rand < 201)
+            else if (rand < 6) //5
             {
-                if(rand < 41)
+                m_guyName.Value = namesList1.RandomEntry().ToTitleCase().Replace("\r", "");
+            }
+            else if(rand < 247) //240
+            {
+                if(rand < 47) //40
                 {
                     m_guyName.Value = string.Format("{0} the {1}", namesList1.RandomEntry().ToTitleCase(), nouns.RandomEntry().ToTitleCase()).Replace("\r", "");
                 }
-                else if (rand < 81)
+                else if (rand < 87) //40
                 {
                     m_guyName.Value = string.Format("{0} with the {1}", namesList1.RandomEntry().ToTitleCase(), nouns.RandomEntry().ToTitleCase()).Replace("\r", "");
                 }
-                else if (rand < 121)
+                else if (rand < 127) //40
                 {
                     m_guyName.Value = string.Format("{0} of the {1}", namesList1.RandomEntry().ToTitleCase(), nouns.RandomEntry().ToTitleCase()).Replace("\r", "");
                 }
-                else if (rand < 161)
+                else if (rand < 167) //40
                 {
                     m_guyName.Value = string.Format("{0} the {1}less", namesList1.RandomEntry().ToTitleCase(), nouns.RandomEntry().ToTitleCase()).Replace("\r", "");
                 }
-                else
+                else if (rand < 177) //10
+                {
+                    m_guyName.Value = string.Format("{0}, holder of the {1}", namesList1.RandomEntry().ToTitleCase(), nouns.RandomEntry().ToTitleCase()).Replace("\r", "");
+                }
+                else if (rand < 187) //10
+                {
+                    m_guyName.Value = string.Format("{0}, keeper of the {1}", namesList1.RandomEntry().ToTitleCase(), nouns.RandomEntry().ToTitleCase()).Replace("\r", "");
+                }
+                else if (rand < 207) //20
+                {
+                    m_guyName.Value = string.Format("{0} {1} {2}", namesList2.RandomEntry().ToTitleCase(), nouns.RandomEntry().ToTitleCase(), namesList1.RandomEntry().ToTitleCase()).Replace("\r", "");
+                }
+                else //40
                 {
                     m_guyName.Value = string.Format("{0} from the {1}", namesList1.RandomEntry().ToTitleCase(), nouns.RandomEntry().ToTitleCase()).Replace("\r", "");
                 }
             }
-            else if (rand < 206)
+            else if(rand < 307) //60
             {
-                m_guyName.Value = namesList1.RandomEntry().ToTitleCase().Replace("\r", "");
+                if(rand < 257) //10
+                {
+                    m_guyName.Value = string.Format("{0} (not the {1} one)", namesList1.RandomEntry().ToTitleCase(), namesList2.RandomEntry().ToTitleCase()).Replace("\r", "");
+                }
+                else if (rand < 267) //10
+                {
+                    m_guyName.Value = string.Format("{0} the {1}-Man", namesList1.RandomEntry().ToTitleCase(), nouns.RandomEntry().ToTitleCase()).Replace("\r", "");
+                }
+                else if (rand < 277) //10
+                {
+                    m_guyName.Value = string.Format("{0} the {1}-Woman", namesList1.RandomEntry().ToTitleCase(), nouns.RandomEntry().ToTitleCase()).Replace("\r", "");
+                }
+                else if (rand < 287) //10
+                {
+                    m_guyName.Value = string.Format("{0} the Were{1}", namesList1.RandomEntry().ToTitleCase(), nouns.RandomEntry().ToLower()).Replace("\r", "");
+                }
+                else if (rand < 292) //5
+                {
+                    m_guyName.Value = string.Format("Thoroughly {0} {1}", namesList2.RandomEntry().ToTitleCase(), namesList1.RandomEntry().ToTitleCase()).Replace("\r", "");
+                }
+                else if (rand < 297) //5
+                {
+                    m_guyName.Value = string.Format("Intensely {0} {1}", namesList2.RandomEntry().ToTitleCase(), namesList1.RandomEntry().ToTitleCase()).Replace("\r", "");
+                }
+                else if (rand < 302) //5
+                {
+                    m_guyName.Value = string.Format("Off-Puttingly {0} {1}", namesList2.RandomEntry().ToTitleCase(), namesList1.RandomEntry().ToTitleCase()).Replace("\r", "");
+                }
+                else //10
+                {
+                    m_guyName.Value = string.Format("The {0}er {1}", namesList2.RandomEntry().ToTitleCase(), namesList1.RandomEntry().ToTitleCase()).Replace("\r", "");
+                }
             }
-            else
+            else //693
             {
                 m_guyName.Value = string.Concat(namesList1.RandomEntry().ToTitleCase(), " the ", namesList2.RandomEntry().ToTitleCase()).Replace("\r", "");
             }
