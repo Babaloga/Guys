@@ -6,6 +6,7 @@ using Unity.Netcode;
 public class PlatformShimmy : NetworkBehaviour
 {
     public float range = 2;
+    public float speed = 1;
     private float startPos;
     private float offset;
 
@@ -19,7 +20,7 @@ public class PlatformShimmy : NetworkBehaviour
     {
         transform.localPosition = new Vector3(
             transform.localPosition.x,
-            startPos + (Mathf.PerlinNoise1D(offset + (Time.time/500f)) * 2 * range) - range,
+            startPos + (Mathf.PerlinNoise1D(offset + (speed * Time.time/500f)) * 2 * range) - range,
             transform.localPosition.z);
     }
 }

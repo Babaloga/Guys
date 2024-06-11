@@ -24,6 +24,6 @@ public class BackgroundDrift : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        transform.localRotation = Quaternion.Euler(sPos.x + 0, (float)((sPos.y + ((startSeconds + Time.timeAsDouble) * scale / (double)100))%(double)360), sPos.z + 0);
+        transform.localRotation = Quaternion.Euler(sPos.x + 0, (float)((sPos.y + ((startSeconds + (Time.timeAsDouble * (double)100.0)) * scale / (double)100))%(double)360), sPos.z + 0);
     }
 }

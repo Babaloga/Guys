@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
-using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using System.IO;
 using System.Linq;
@@ -58,8 +57,6 @@ public class GuyBehavior : NetworkBehaviour
     private float lastLeaderboardUpdateTime = 0;
     private bool setToDestroy = false;
 
-    private Vector2 moveInput;
-
     #region Startup
     public override void OnNetworkSpawn()
     {
@@ -88,15 +85,6 @@ public class GuyBehavior : NetworkBehaviour
         else
             playerLegacyCrown.transform.localRotation = Quaternion.Euler(UnityEngine.Random.Range(0, -playerCrown.transform.parent.localRotation.x), 0, 0);
 
-        if (IsOwner)
-        {
-            GetComponent<PlayerInput>().enabled = true;
-        }
-        else
-        {
-            Destroy(GetComponent<PlayerInput>());
-        }
-
         if (IsServer)
         {
             string namesList1In = Resources.Load<TextAsset>("Name1").text;
@@ -114,38 +102,85 @@ public class GuyBehavior : NetworkBehaviour
             //m_lastHit.Value = "";
 
             int rand = UnityEngine.Random.Range(0, 1000);
-            if (rand < 1)
+            if (rand < 1) //1
             {
                 m_guyName.Value = string.Concat("Good Ol' ", namesList2.RandomEntry().ToTitleCase(), " ", namesList1.RandomEntry().ToTitleCase()).Replace("\r", "");
             }
-            else if(rand < 201)
+            else if (rand < 6) //5
             {
-                if(rand < 41)
+                m_guyName.Value = namesList1.RandomEntry().ToTitleCase().Replace("\r", "");
+            }
+            else if(rand < 247) //240
+            {
+                if(rand < 47) //40
                 {
                     m_guyName.Value = string.Format("{0} the {1}", namesList1.RandomEntry().ToTitleCase(), nouns.RandomEntry().ToTitleCase()).Replace("\r", "");
                 }
-                else if (rand < 81)
+                else if (rand < 87) //40
                 {
                     m_guyName.Value = string.Format("{0} with the {1}", namesList1.RandomEntry().ToTitleCase(), nouns.RandomEntry().ToTitleCase()).Replace("\r", "");
                 }
-                else if (rand < 121)
+                else if (rand < 127) //40
                 {
                     m_guyName.Value = string.Format("{0} of the {1}", namesList1.RandomEntry().ToTitleCase(), nouns.RandomEntry().ToTitleCase()).Replace("\r", "");
                 }
-                else if (rand < 161)
+                else if (rand < 167) //40
                 {
                     m_guyName.Value = string.Format("{0} the {1}less", namesList1.RandomEntry().ToTitleCase(), nouns.RandomEntry().ToTitleCase()).Replace("\r", "");
                 }
-                else
+                else if (rand < 177) //10
+                {
+                    m_guyName.Value = string.Format("{0}, holder of the {1}", namesList1.RandomEntry().ToTitleCase(), nouns.RandomEntry().ToTitleCase()).Replace("\r", "");
+                }
+                else if (rand < 187) //10
+                {
+                    m_guyName.Value = string.Format("{0}, keeper of the {1}", namesList1.RandomEntry().ToTitleCase(), nouns.RandomEntry().ToTitleCase()).Replace("\r", "");
+                }
+                else if (rand < 207) //20
+                {
+                    m_guyName.Value = string.Format("{0} {1} {2}", namesList2.RandomEntry().ToTitleCase(), nouns.RandomEntry().ToTitleCase(), namesList1.RandomEntry().ToTitleCase()).Replace("\r", "");
+                }
+                else //40
                 {
                     m_guyName.Value = string.Format("{0} from the {1}", namesList1.RandomEntry().ToTitleCase(), nouns.RandomEntry().ToTitleCase()).Replace("\r", "");
                 }
             }
-            else if (rand < 206)
+            else if(rand < 307) //60
             {
-                m_guyName.Value = namesList1.RandomEntry().ToTitleCase().Replace("\r", "");
+                if(rand < 257) //10
+                {
+                    m_guyName.Value = string.Format("{0} (not the {1} one)", namesList1.RandomEntry().ToTitleCase(), namesList2.RandomEntry().ToTitleCase()).Replace("\r", "");
+                }
+                else if (rand < 267) //10
+                {
+                    m_guyName.Value = string.Format("{0} the {1}-Man", namesList1.RandomEntry().ToTitleCase(), nouns.RandomEntry().ToTitleCase()).Replace("\r", "");
+                }
+                else if (rand < 277) //10
+                {
+                    m_guyName.Value = string.Format("{0} the {1}-Woman", namesList1.RandomEntry().ToTitleCase(), nouns.RandomEntry().ToTitleCase()).Replace("\r", "");
+                }
+                else if (rand < 287) //10
+                {
+                    m_guyName.Value = string.Format("{0} the Were{1}", namesList1.RandomEntry().ToTitleCase(), nouns.RandomEntry().ToLower()).Replace("\r", "");
+                }
+                else if (rand < 292) //5
+                {
+                    m_guyName.Value = string.Format("Thoroughly {0} {1}", namesList2.RandomEntry().ToTitleCase(), namesList1.RandomEntry().ToTitleCase()).Replace("\r", "");
+                }
+                else if (rand < 297) //5
+                {
+                    m_guyName.Value = string.Format("Intensely {0} {1}", namesList2.RandomEntry().ToTitleCase(), namesList1.RandomEntry().ToTitleCase()).Replace("\r", "");
+                }
+                else if (rand < 302) //5
+                {
+                    m_guyName.Value = string.Format("Off-Puttingly {0} {1}", namesList2.RandomEntry().ToTitleCase(), namesList1.RandomEntry().ToTitleCase()).Replace("\r", "");
+                }
+                else //10
+                {
+                    m_guyName.Value = string.Format("The {0}er {1}", namesList2.RandomEntry().ToTitleCase(), namesList1.RandomEntry().ToTitleCase()).Replace("\r", "");
+                }
             }
-            else
+            else //693
             {
                 m_guyName.Value = string.Concat(namesList1.RandomEntry().ToTitleCase(), " the ", namesList2.RandomEntry().ToTitleCase()).Replace("\r", "");
             }
@@ -184,6 +219,20 @@ public class GuyBehavior : NetworkBehaviour
         base.OnDestroy();
     }
 
+    private void OnApplicationPause(bool paused)
+    {
+        if (!IsClient) return;
+
+        if (paused)
+        {
+            KillMeRpc(false);
+        }
+        else
+        {
+            KillAndRespawnRpc(false, true);
+        }
+    }
+
     #endregion
 
     #region Updates
@@ -202,7 +251,14 @@ public class GuyBehavior : NetworkBehaviour
 
         if (!IsOwner) return;
 
-        Vector3 forceDirection = new Vector3(moveInput.x, 0, moveInput.y);
+        Vector3 forceDirection = new Vector3(Input.GetAxis("Horizontal"), rb.velocity.y, Input.GetAxis("Vertical")).normalized;
+        C_ApplyFixedMovement(forceDirection);
+
+        m_velocity.Value = rb.velocity;
+    }
+
+    private void C_ApplyFixedMovement(Vector3 forceDirection)
+    {
         float forceMagnitude = Time.fixedDeltaTime * speed;
 
         if (cameraRelativeMovement)
@@ -225,8 +281,6 @@ public class GuyBehavior : NetworkBehaviour
         {
             rb.AddForce(forceDirection * (forceMagnitude / 5f));
         }
-
-        m_velocity.Value = rb.velocity;
     }
 
     private void Update()
@@ -259,6 +313,24 @@ public class GuyBehavior : NetworkBehaviour
 
         if (!IsOwner) return;
 
+        C_ApplyMovement(Input.GetButtonDown("Jump"));
+
+        if(Time.time - lastLeaderboardUpdateTime >= 0.25f)
+        {
+            lastLeaderboardUpdateTime = Time.time;
+        }
+
+        if (transform.position.y < -5 || Input.GetButtonUp("KillMe"))
+        {
+            KillMeRpc();
+        }
+    }
+
+    private void C_ApplyMovement(bool jumping)
+    {
+        if (jumping && grounded)
+            rb.AddForce(Vector3.up * jumpSpeed, ForceMode.VelocityChange);
+
         if (grounded && Vector3.Angle(transform.up, Vector3.up) < 90f)
         {
             consecutiveUngroundedFrames = 0;
@@ -276,46 +348,12 @@ public class GuyBehavior : NetworkBehaviour
                 transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.Euler(Vector3.zero), 40 * Time.deltaTime);
             }
         }
-
-        if (Time.time - lastLeaderboardUpdateTime >= 0.25f)
-        {
-            lastLeaderboardUpdateTime = Time.time;
-        }
-
-        if (transform.position.y < -1)
-        {
-            KillMeRpc();
-        }
-    }
-    #endregion
-
-    #region Input
-
-    public void OnMove(InputValue value)
-    {
-        moveInput = value.Get<Vector2>();
-    }
-
-    public void OnMove(Vector2 value)
-    {
-        moveInput = value;
-    }
-
-    public void OnJump()
-    {
-        if (grounded)
-            rb.AddForce(Vector3.up * jumpSpeed, ForceMode.VelocityChange);
-    }
-
-    public void OnKill()
-    {
-        KillMeRpc();
     }
 
     #endregion
 
     [Rpc(SendTo.Server)]
-    public void KillMeRpc()
+    public void KillMeRpc(bool respawn = true)
     {
         if (!setToDestroy)
         {
@@ -323,18 +361,21 @@ public class GuyBehavior : NetworkBehaviour
 
             DeathExplosionRpc();
             
-            KillAndRespawnRpc();
+            KillAndRespawnRpc(true, respawn);
         }
     }
 
     [Rpc(SendTo.Server)]
-    public void KillAndRespawnRpc()
+    public void KillAndRespawnRpc(bool kill = true, bool respawn = true)
     {
         ulong clientID = OwnerClientId;
-        GetComponent<NetworkObject>().Despawn();
-        NetworkObject newPlayer = Instantiate(NetworkManager.NetworkConfig.PlayerPrefab/*, new Vector3(UnityEngine.Random.Range(-3, 3), 5, UnityEngine.Random.Range(-3, 3)), Quaternion.identity*/).GetComponent<NetworkObject>();
+        if(kill) GetComponent<NetworkObject>().Despawn();
 
-        newPlayer.SpawnAsPlayerObject(clientID);
+        if (respawn)
+        {
+            NetworkObject newPlayer = Instantiate(NetworkManager.NetworkConfig.PlayerPrefab).GetComponent<NetworkObject>();
+            newPlayer.SpawnAsPlayerObject(clientID);
+        }
     }
 
     [Rpc(SendTo.ClientsAndHost)]
