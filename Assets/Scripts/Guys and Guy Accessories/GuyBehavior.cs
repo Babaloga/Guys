@@ -172,6 +172,20 @@ public class GuyBehavior : NetworkBehaviour
         base.OnDestroy();
     }
 
+    private void OnApplicationPause(bool paused)
+    {
+        if (!IsClient) return;
+
+        if (paused)
+        {
+            KillMeRpc(false);
+        }
+        else
+        {
+            KillAndRespawnRpc(false, true);
+        }
+    }
+
     #endregion
 
     #region Updates
@@ -292,7 +306,7 @@ public class GuyBehavior : NetworkBehaviour
     #endregion
 
     [Rpc(SendTo.Server)]
-    public void KillMeRpc()
+    public void KillMeRpc(bool respawn = true)
     {
         if (!setToDestroy)
         {
@@ -300,18 +314,21 @@ public class GuyBehavior : NetworkBehaviour
 
             DeathExplosionRpc();
             
-            KillAndRespawnRpc();
+            KillAndRespawnRpc(true, respawn);
         }
     }
 
     [Rpc(SendTo.Server)]
-    public void KillAndRespawnRpc()
+    public void KillAndRespawnRpc(bool kill = true, bool respawn = true)
     {
         ulong clientID = OwnerClientId;
-        GetComponent<NetworkObject>().Despawn();
-        NetworkObject newPlayer = Instantiate(NetworkManager.NetworkConfig.PlayerPrefab/*, new Vector3(UnityEngine.Random.Range(-3, 3), 5, UnityEngine.Random.Range(-3, 3)), Quaternion.identity*/).GetComponent<NetworkObject>();
+        if(kill) GetComponent<NetworkObject>().Despawn();
 
-        newPlayer.SpawnAsPlayerObject(clientID);
+        if (respawn)
+        {
+            NetworkObject newPlayer = Instantiate(NetworkManager.NetworkConfig.PlayerPrefab).GetComponent<NetworkObject>();
+            newPlayer.SpawnAsPlayerObject(clientID);
+        }
     }
 
     [Rpc(SendTo.ClientsAndHost)]

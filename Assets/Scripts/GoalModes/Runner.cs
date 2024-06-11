@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using Unity.Netcode;
+using System.Drawing.Printing;
 
 namespace GoalModes {
     public class Runner : IGoalMode
     {
         public Dictionary<string, float> LeaderDict { get; set; }
         public string Unit { get { return "rad crown"; } }
+        public float lastTransferTime = 0;
 
         public void InitRpc()
         {
@@ -22,7 +24,32 @@ namespace GoalModes {
 
         public void LogEventOnCollisionRpc(GuyBehavior guy, NetworkObjectReference objRef)
         {
-            return;
+            NetworkObject result;
+            objRef.TryGet(out result);
+
+            if (result == null) throw new System.Exception("Invalid Network Object Reference");
+
+            GuyBehavior guyIHit = result.GetComponent<GuyBehavior>();
+
+            Debug.Log(guy.GuyName + " hit " + guyIHit.GuyName);
+
+            Debug.Log(guy.GuyName + ": " + LeaderDict.ContainsKey(guy.GuyName));
+            Debug.Log(guyIHit.GuyName + ": " + LeaderDict.ContainsKey(guyIHit.GuyName));
+
+            if (guyIHit != null)
+            {
+                float value = 0;
+                LeaderDict.TryGetValue(guy.GuyName, out value);
+
+                Debug.Log("Time since last transfer: " + (Time.time - lastTransferTime));
+
+                if ((int)value == 1 && Time.time - lastTransferTime > 0.5f)
+                {
+                    LeaderDict.Remove(guy.GuyName);
+                    LeaderDict[guyIHit.GuyName] = 1;
+                    lastTransferTime = Time.time;
+                }
+            }
         }
 
         public void LogEventOnTriggerRpc(GuyBehavior guy, NetworkObjectReference objRef)

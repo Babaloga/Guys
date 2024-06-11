@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 705507994}
-  m_IndirectSpecularColor: {r: 0.4366757, g: 0.48427194, b: 0.5645252, a: 1}
+  m_IndirectSpecularColor: {r: 0, g: 0, b: 0, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -1810,7 +1810,7 @@ MonoBehaviour:
   - {fileID: 1777467074}
   - {fileID: 231772162}
   - {fileID: 1857725387}
-  startingGoal: 5
+  startingGoal: 6
   currentGoal:
     m_InternalValue: 0
   goalDuration: 300
@@ -15066,7 +15066,7 @@ MonoBehaviour:
     Prefabs:
       NetworkPrefabsLists:
       - {fileID: 11400000, guid: 17bb56cf3425f8c4788a04c6c9899ddb, type: 2}
-    TickRate: 30
+    TickRate: 40
     ClientConnectionBufferTimeout: 10
     ConnectionApproval: 0
     ConnectionData: 
